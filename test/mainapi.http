@@ -1,0 +1,9 @@
+### POST request
+POST {{host}}/snippet/create
+
+### POST request
+GET {{host}}/
+
+
+### GET request
+GET {{host}}/snippet?id=25
