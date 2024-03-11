@@ -1,7 +1,8 @@
-package main
+package migrate
 
 import (
 	"snippetbox/pkg"
+	"snippetbox/storing"
 )
 
 func main() {
@@ -9,8 +10,7 @@ func main() {
 	app := pkg.NewApp(pkg.EnvInstanceDev)
 	app.Name("Snippet Box").
 		Logger(pkg.LogInstanceStdLogger).
-		WebServerAddress("", "").
-		WebServer(pkg.ServerInstanceMux)
-	app.Run()
+		Store(storing.StoreInstancePostgres).
+		Migrate()
 
 }

@@ -1,0 +1,72 @@
+[ERROR]	2024/03/07 22:30:54 C:/Users/elcom/scoop/apps/go/current/src/net/http/server.go:3411: http: panic serving [::1]:57195: runtime error: invalid memory address or nil pointer dereference
+goroutine 7 [running]:
+net/http.(*conn).serve.func1()
+	C:/Users/elcom/scoop/apps/go/current/src/net/http/server.go:1898 +0xbe
+panic({0xc9f660?, 0xfde1d0?})
+	C:/Users/elcom/scoop/apps/go/current/src/runtime/panic.go:770 +0x132
+log.(*Logger).output(0x4ea?, 0xc0000999e0?, 0x2?, 0x2?)
+	C:/Users/elcom/scoop/apps/go/current/src/log/log.go:203 +0x34
+log.(*Logger).Output(0xcf5be8?, 0x5?, {0xc0000c8500?, 0x2?})
+	C:/Users/elcom/scoop/apps/go/current/src/log/log.go:195 +0x4b
+snippetbox/pkg.Handlers.serverError({{0x0?, 0x0?}}, {0xd95b30, 0xc0000b6000}, {0xd94020?, 0xc00008c0c0?})
+	C:/Users/elcom/GolandProjects/lets_go_snippet/pkg/helpers.go:13 +0xf2
+snippetbox/pkg.Handlers.Home({{0x0?, 0x0?}}, {0xd95b30, 0xc0000b6000}, 0x1bf13ad0598?)
+	C:/Users/elcom/GolandProjects/lets_go_snippet/pkg/handlers.go:42 +0x13e
+net/http.HandlerFunc.ServeHTTP(0xc000020d90?, {0xd95b30?, 0xc0000b6000?}, 0xc4171a?)
+	C:/Users/elcom/scoop/apps/go/current/src/net/http/server.go:2166 +0x29
+net/http.(*ServeMux).ServeHTTP(0x999219?, {0xd95b30, 0xc0000b6000}, 0xc00010e5a0)
+	C:/Users/elcom/scoop/apps/go/current/src/net/http/server.go:2683 +0x1ad
+net/http.serverHandler.ServeHTTP({0xc00001f410?}, {0xd95b30?, 0xc0000b6000?}, 0x6?)
+	C:/Users/elcom/scoop/apps/go/current/src/net/http/server.go:3137 +0x8e
+net/http.(*conn).serve(0xc000144090, {0xd96290, 0xc00001f230})
+	C:/Users/elcom/scoop/apps/go/current/src/net/http/server.go:2039 +0x5e8
+created by net/http.(*Server).Serve in goroutine 1
+	C:/Users/elcom/scoop/apps/go/current/src/net/http/server.go:3285 +0x4b4
+[ERROR]	2024/03/07 22:30:54 C:/Users/elcom/scoop/apps/go/current/src/net/http/server.go:3411: http: panic serving [::1]:57194: runtime error: invalid memory address or nil pointer dereference
+goroutine 6 [running]:
+net/http.(*conn).serve.func1()
+	C:/Users/elcom/scoop/apps/go/current/src/net/http/server.go:1898 +0xbe
+panic({0xc9f660?, 0xfde1d0?})
+	C:/Users/elcom/scoop/apps/go/current/src/runtime/panic.go:770 +0x132
+log.(*Logger).output(0x4ea?, 0xc0000299e0?, 0x2?, 0x2?)
+	C:/Users/elcom/scoop/apps/go/current/src/log/log.go:203 +0x34
+log.(*Logger).Output(0xcf5be8?, 0x5?, {0xc0000c8a00?, 0x2?})
+	C:/Users/elcom/scoop/apps/go/current/src/log/log.go:195 +0x4b
+snippetbox/pkg.Handlers.serverError({{0x0?, 0x0?}}, {0xd95b30, 0xc0000b61c0}, {0xd94020?, 0xc00008c1b0?})
+	C:/Users/elcom/GolandProjects/lets_go_snippet/pkg/helpers.go:13 +0xf2
+snippetbox/pkg.Handlers.Home({{0x0?, 0x0?}}, {0xd95b30, 0xc0000b61c0}, 0x1bf13ad0598?)
+	C:/Users/elcom/GolandProjects/lets_go_snippet/pkg/handlers.go:42 +0x13e
+net/http.HandlerFunc.ServeHTTP(0xc000020d90?, {0xd95b30?, 0xc0000b61c0?}, 0xc4171a?)
+	C:/Users/elcom/scoop/apps/go/current/src/net/http/server.go:2166 +0x29
+net/http.(*ServeMux).ServeHTTP(0x999219?, {0xd95b30, 0xc0000b61c0}, 0xc00010e480)
+	C:/Users/elcom/scoop/apps/go/current/src/net/http/server.go:2683 +0x1ad
+net/http.serverHandler.ServeHTTP({0xc00001f320?}, {0xd95b30?, 0xc0000b61c0?}, 0x6?)
+	C:/Users/elcom/scoop/apps/go/current/src/net/http/server.go:3137 +0x8e
+net/http.(*conn).serve(0xc000144000, {0xd96290, 0xc00001f230})
+	C:/Users/elcom/scoop/apps/go/current/src/net/http/server.go:2039 +0x5e8
+created by net/http.(*Server).Serve in goroutine 1
+	C:/Users/elcom/scoop/apps/go/current/src/net/http/server.go:3285 +0x4b4
+[ERROR]	2024/03/07 22:30:54 C:/Users/elcom/scoop/apps/go/current/src/net/http/server.go:3411: http: panic serving [::1]:57196: runtime error: invalid memory address or nil pointer dereference
+goroutine 8 [running]:
+net/http.(*conn).serve.func1()
+	C:/Users/elcom/scoop/apps/go/current/src/net/http/server.go:1898 +0xbe
+panic({0xc9f660?, 0xfde1d0?})
+	C:/Users/elcom/scoop/apps/go/current/src/runtime/panic.go:770 +0x132
+log.(*Logger).output(0x4ea?, 0xc00014f9e0?, 0x2?, 0x2?)
+	C:/Users/elcom/scoop/apps/go/current/src/log/log.go:203 +0x34
+log.(*Logger).Output(0xcf5be8?, 0x5?, {0xc00001aa00?, 0x2?})
+	C:/Users/elcom/scoop/apps/go/current/src/log/log.go:195 +0x4b
+snippetbox/pkg.Handlers.serverError({{0x0?, 0x0?}}, {0xd95b30, 0xc000154000}, {0xd94020?, 0xc00001f5c0?})
+	C:/Users/elcom/GolandProjects/lets_go_snippet/pkg/helpers.go:13 +0xf2
+snippetbox/pkg.Handlers.Home({{0x0?, 0x0?}}, {0xd95b30, 0xc000154000}, 0x1bf13ad0108?)
+	C:/Users/elcom/GolandProjects/lets_go_snippet/pkg/handlers.go:42 +0x13e
+net/http.HandlerFunc.ServeHTTP(0xc000020d90?, {0xd95b30?, 0xc000154000?}, 0xc4171a?)
+	C:/Users/elcom/scoop/apps/go/current/src/net/http/server.go:2166 +0x29
+net/http.(*ServeMux).ServeHTTP(0x999219?, {0xd95b30, 0xc000154000}, 0xc00010e6c0)
+	C:/Users/elcom/scoop/apps/go/current/src/net/http/server.go:2683 +0x1ad
+net/http.serverHandler.ServeHTTP({0xc00001f500?}, {0xd95b30?, 0xc000154000?}, 0x6?)
+	C:/Users/elcom/scoop/apps/go/current/src/net/http/server.go:3137 +0x8e
+net/http.(*conn).serve(0xc000144120, {0xd96290, 0xc00001f230})
+	C:/Users/elcom/scoop/apps/go/current/src/net/http/server.go:2039 +0x5e8
+created by net/http.(*Server).Serve in goroutine 1
+	C:/Users/elcom/scoop/apps/go/current/src/net/http/server.go:3285 +0x4b4

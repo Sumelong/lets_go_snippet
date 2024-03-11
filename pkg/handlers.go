@@ -13,7 +13,7 @@ var (
 )
 
 type Handlers struct {
-	lg ILogger
+	lg Logger
 }
 
 func (h Handlers) Home(w http.ResponseWriter, r *http.Request) {
@@ -37,9 +37,12 @@ func (h Handlers) Home(w http.ResponseWriter, r *http.Request) {
 	ts, err := template.ParseFiles(files...)
 	if err != nil {
 		//log error
-		h.lg.Info(err.Error(), err)
+		//h.lg.Info(err.Error(), err)
+
+		h.serverError(w, err) // Use the serverError() helper.
+
 		//return error
-		http.Error(w, ErrInternalServerErr.Error(), http.StatusInternalServerError)
+		//http.Error(w, ErrInternalServerErr.Error(), http.StatusInternalServerError)
 		return
 	}
 	// We then use the Execute() method on the template set to write the template
@@ -47,21 +50,17 @@ func (h Handlers) Home(w http.ResponseWriter, r *http.Request) {
 	// dynamic data that we want to pass in, which for now we'll leave as nil.
 	err = ts.Execute(w, nil)
 	if err != nil {
-		//log error
-		h.lg.Info(err.Error(), err)
-		//return error
-		http.Error(w, ErrInternalServerErr.Error(), http.StatusInternalServerError)
+		h.serverError(w, err) // Use the serverError() helper.
 	}
 
-	//w.Write([]byte("Hello from Snippetbox"))
 }
 func (h Handlers) ShowSnippet(w http.ResponseWriter, r *http.Request) {
 	id, err := strconv.Atoi(r.URL.Query().Get("id"))
 	if err != nil || id < 1 {
-		//log error
-		h.lg.Info(err.Error(), err)
 		//return error
 		http.NotFound(w, r)
+		//log error
+		h.lg.Info(err.Error(), err)
 		return
 	}
 	fmt.Fprintf(w, "Display a specific snippet with ID %d...", id)
@@ -69,7 +68,8 @@ func (h Handlers) ShowSnippet(w http.ResponseWriter, r *http.Request) {
 func (h Handlers) CreateSnippet(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		w.Header().Set("Allow", http.MethodPost)
-		http.Error(w, "Method Not Allowed", 405)
+		h.clientError(w, http.StatusMethodNotAllowed) // Use the clientError() helper.
+		//http.Error(w, "Method Not Allowed", 405)
 		return
 	}
 	w.Write([]byte("Create a new snippet..."))
@@ -77,4 +77,8 @@ func (h Handlers) CreateSnippet(w http.ResponseWriter, r *http.Request) {
 func (h Handlers) HealthChecker(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte("health check ok"))
+}
+
+func (h Handlers) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+
 }

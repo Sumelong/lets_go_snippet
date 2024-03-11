@@ -2,41 +2,40 @@ package pkg
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 	"path/filepath"
 )
 
 type ServerMux struct {
-	mx     *http.ServeMux
-	hdl    Handlers
-	lg     *Logger
-	config *App
+	mx  *http.ServeMux
+	hdl Handlers
+	lg  Logger
+	app *App
 }
 
-func NewServerMux(a *App) (ServerMux, error) {
-	//initial new logger
-	lg, err := NewLoggerFactory(a)
-	if err != nil {
-		return ServerMux{}, err
-	}
+func NewServerMux(a *App) (*ServerMux, error) {
 
 	// return server
-	return ServerMux{
-		mx:     http.NewServeMux(),
-		lg:     a,
-		config: a,
+	return &ServerMux{
+		mx:  http.NewServeMux(),
+		lg:  a.Logging,
+		app: a,
 	}, nil
 }
 
 func (m ServerMux) setHandler(r *http.ServeMux) {
 
-	r.HandleFunc("/health", HealthChecker)
-	r.HandleFunc("/", Home)
-	r.HandleFunc("/snippet/", ShowSnippet)
-	r.HandleFunc("/snippet/create", CreateSnippet)
+	r.HandleFunc("/health", m.hdl.HealthChecker)
+	r.HandleFunc("/", m.hdl.Home)
+	r.HandleFunc("/snippet/", m.hdl.ShowSnippet)
+	r.HandleFunc("/snippet/create", m.hdl.CreateSnippet)
 }
 
-func (m ServerMux) Run() {
+func (m ServerMux) Begin() error {
+
+	//flag.StringVar(&m.app.port, "addr", "4000", "HTTP network address")
+	//flag.Parse()
 
 	// Create a file server which serves files out of the "./ui/static" directory.
 	//	// Note that the path given to the http.Dir function is relative to the project
@@ -46,28 +45,32 @@ func (m ServerMux) Run() {
 	// all URL paths that start with "/static/". For matching paths, we strip the
 	// "/static" prefix before the request reaches the file server.
 	//******>>>mux.Handle("/static/", http.StripPrefix("/static", fileServer))
-	fileServer := http.FileServer(neuteredFileSystem{http.Dir("./ui/static/")})
+	fileServer := http.FileServer(http.Dir("./ui/static/"))
 	m.mx.Handle("/static", http.NotFoundHandler())
 	m.mx.Handle("/static/", http.StripPrefix("/static", fileServer))
 
+	//set handlers
 	m.setHandler(m.mx)
+
 	// Initialize a new http.Server struct. We set the Addr and Handler fields so
 	// that the server uses the same network address and routes as before, and set
-	// the ErrorLog field so that the server now uses the custom errorLog logger in
+	// the ErrorLog field so that the server now uses the custom errorLog Logging in
 	// the event of any problems.
 	srv := &http.Server{
-		Addr:     m.config.Port,
+		Addr:     fmt.Sprintf(":%s", m.app.port),
 		ErrorLog: m.lg.ErrLog,
 		Handler:  m.mx,
 	}
 
-	m.lg.InfoLog.Printf("Starting server on %s", m.config.Port)
+	m.lg.Info("Starting server on %s", m.app.port)
 
 	// Call the ListenAndServe() method on our new http.Server struct.
 	err := srv.ListenAndServe()
 
-	//log and panic of server error
-	m.lg.ErrLog.Fatal(err)
+	//log error from serve
+	m.lg.Error(err.Error(), err)
+
+	return err
 }
 
 type neuteredFileSystem struct {
@@ -103,16 +106,21 @@ const (
 	ServerInstanceMux
 )
 
-var ErrUnsupportedServer = errors.New("unsupported server")
-
-type appServer struct {
+type IServer interface {
+	Begin() error
 }
 
-func (s appServer) NewServerFactory(app *App) (IApp, error) {
+type port string
+
+var ErrUnsupportedServer = errors.New("unsupported server")
+
+func NewServerFactory(app *App) (IServer, error) {
 	switch app.serverInstance {
 	case ServerInstanceCustom:
 		return nil, ErrUnsupportedServer
-	default:
+	case ServerInstanceMux:
 		return NewServerMux(app)
+	default:
+		return nil, ErrUnsupportedServer
 	}
 }

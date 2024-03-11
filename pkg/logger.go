@@ -25,16 +25,16 @@ type Logger struct {
 	ErrLog, InfoLog *log.Logger
 }
 
-func NewLogger() *Logger {
+func NewLogger() Logger {
 
 	//log info
-	infoLog := log.New(os.Stdout, "[INFO]\t", log.Ldate|log.Ltime|log.LUTC)
+	info := log.New(os.Stdout, "[INFO]\t", log.Ldate|log.Ltime|log.LUTC)
 	//log error
-	errLog := log.New(os.Stderr, "[ERROR]\t", log.Ldate|log.Ltime|log.LUTC|log.Llongfile)
+	err := log.New(os.Stderr, "[ERROR]\t", log.Ldate|log.Ltime|log.LUTC|log.Llongfile)
 
-	return &Logger{
-		ErrLog:  errLog,
-		InfoLog: infoLog,
+	return Logger{
+		ErrLog:  err,
+		InfoLog: info,
 	}
 }
 
@@ -56,48 +56,58 @@ func (l Logger) Fatal(format string, args ...any) {
 
 //************* LOGGER FACTORY *********************///
 
-func NewLoggerFactory(app *App) (ILogger, error) {
+func NewLoggerFactory(app *App) (Logger, error) {
 
 	switch app.envInstance {
 	case EnvInstanceDev:
 		switch app.loggerInstance {
 		case LogInstanceSlogLogger:
-			return nil, ErrUnsupportedLogger
+			return Logger{}, ErrUnsupportedLogger
 		case LogInstanceStdLogger:
+			//log info
+			//infoLog := log.New(os.Stdout, "[INFO]\t", log.Ldate|log.Ltime|log.LUTC)
+			//log error
+			//errLog := log.New(os.Stderr, "[ERROR]\t", log.Ldate|log.Ltime|log.LUTC|log.Llongfile)
 
 			return NewLogger(), nil
 		default:
-			return nil, ErrUnsupportedLogger
+			return Logger{}, ErrUnsupportedLogger
 		}
 	case EnvInstanceProd:
 		switch app.loggerInstance {
 		case LogInstanceSlogLogger:
-			return nil, ErrUnsupportedLogger
+			return Logger{}, ErrUnsupportedLogger
 		case LogInstanceStdLogger:
 
 			// get infoLog file or return nil and error if any
 			errFile, err := fileWrite(app.prodErrLogFile)
+			//defer errFile.Close()
 			if err != nil {
-				return nil, err
+				return Logger{}, err
 			}
 
 			//get errLog file or return error
 			infoFile, err := fileWrite(app.prodInfoLogFile)
+			//defer infoFile.Close()
 			if err != nil {
-				return nil, err
+				return Logger{}, err
 			}
 
-			//redirect os standard writers to write to file
+			//log info
+			//infoLog := log.New(infoFile, "[INFO]\t", log.Ldate|log.Ltime|log.LUTC)
+			//log error
+			//errLog := log.New(errFile, "[ERROR]\t", log.Ldate|log.Ltime|log.LUTC|log.Llongfile)
+
 			os.Stdout = infoFile
 			os.Stderr = errFile
 
 			//return newLogger
 			return NewLogger(), nil
 		default:
-			return nil, ErrUnsupportedLogger
+			return Logger{}, ErrUnsupportedLogger
 		}
 	default:
-		return nil, ErrUnsupportedEnv
+		return Logger{}, ErrUnsupportedEnv
 	}
 
 }
