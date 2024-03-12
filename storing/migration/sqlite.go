@@ -1,12 +1,12 @@
 package migration
 
 import (
+	"database/sql"
 	"snippetbox/pkg"
 )
 
-func NewSqliteMigration(app pkg.App) {
-	db := app.Storage
-	lg := app.Logging
+func NewSqliteMigration(db *sql.DB, lg pkg.Logger) {
+
 	defer db.Close()
 
 	// Create your table(s) here. This is just an example.

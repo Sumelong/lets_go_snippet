@@ -1,6 +1,0 @@
-[INFO]	2024/03/07 22:30:24 [Snippet Box] app logger configured
-[INFO]	2024/03/07 22:30:24 set port- and host-%!(EXTRA []interface {}=[])
-[INFO]	2024/03/07 22:30:24 app server configured%!(EXTRA []interface {}=[<nil>])
-[INFO]	2024/03/07 22:30:24 app begin successful%!(EXTRA []interface {}=[])
-[INFO]	2024/03/07 22:30:24 starting app :[Snippet Box]
-[INFO]	2024/03/07 22:30:24 Starting server on [4000]

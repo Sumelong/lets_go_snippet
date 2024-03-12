@@ -4,14 +4,12 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
-	"snippetbox/pkg"
-	"snippetbox/storing"
-
 	_ "modernc.org/sqlite"
+	"snippetbox/pkg"
 )
 
 func NewStoreSqlite(lg pkg.Logger) *sql.DB {
-	c := storing.NewConfigSqlite()
+	c := NewConfigSqlite()
 
 	var dns = fmt.Sprintf(
 		"host=%s port=%s user=%s dbname=%s sslmode=disable password=%s",

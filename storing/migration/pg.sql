@@ -6,7 +6,7 @@ CREATE DATABASE snippetbox WITH ENCODING='UTF8';
 
 
 -- Create user 'web' with password 'pass'
-CREATE USER web WITH PASSWORD 'wed@pass';
+CREATE USER web WITH  ENCRYPTED PASSWORD 'web@pass';
 
 -- Grant privileges on the 'snippetbox' schema to user 'web'
 GRANT SELECT, INSERT, UPDATE ON ALL TABLES IN SCHEMA snippetbox TO web;

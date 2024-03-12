@@ -2,17 +2,12 @@ package pkg
 
 import (
 	"errors"
+	"fmt"
 	"log"
 	"os"
 	"path/filepath"
+	"runtime/debug"
 )
-
-const (
-	LogInstanceStdLogger int = iota
-	LogInstanceSlogLogger
-)
-
-var ErrUnsupportedLogger = errors.ErrUnsupported
 
 type ILogger interface {
 	Error(format string, args ...any)
@@ -47,7 +42,11 @@ func (l Logger) Info(format string, args ...any) {
 }
 
 func (l Logger) Debug(format string, args ...any) {
-	l.ErrLog.Printf(format, args)
+	//l.ErrLog.Printf(format, args)
+
+	trace := fmt.Sprintf("%s\n%s", format, debug.Stack())
+	l.ErrLog.Output(1, trace)
+	//lg.Fatal(err.Error())
 }
 
 func (l Logger) Fatal(format string, args ...any) {
@@ -56,11 +55,25 @@ func (l Logger) Fatal(format string, args ...any) {
 
 //************* LOGGER FACTORY *********************///
 
-func NewLoggerFactory(app *App) (Logger, error) {
+var (
+	ErrUnsupportedEnv    = errors.New("unsupported environment")
+	ErrUnsupportedLogger = errors.New("unsupported logger")
+)
 
-	switch app.envInstance {
+const (
+	LogInstanceStdLogger int = iota
+	LogInstanceSlogLogger
+)
+const (
+	EnvInstanceDev int = iota
+	EnvInstanceProd
+)
+
+func NewLoggerFactory(envInstance, loggerInstance int, errLogFile, infoLogFile string) (Logger, error) {
+
+	switch envInstance {
 	case EnvInstanceDev:
-		switch app.loggerInstance {
+		switch loggerInstance {
 		case LogInstanceSlogLogger:
 			return Logger{}, ErrUnsupportedLogger
 		case LogInstanceStdLogger:
@@ -74,20 +87,20 @@ func NewLoggerFactory(app *App) (Logger, error) {
 			return Logger{}, ErrUnsupportedLogger
 		}
 	case EnvInstanceProd:
-		switch app.loggerInstance {
+		switch loggerInstance {
 		case LogInstanceSlogLogger:
 			return Logger{}, ErrUnsupportedLogger
 		case LogInstanceStdLogger:
 
 			// get infoLog file or return nil and error if any
-			errFile, err := fileWrite(app.prodErrLogFile)
+			errFile, err := fileWrite(errLogFile)
 			//defer errFile.Close()
 			if err != nil {
 				return Logger{}, err
 			}
 
 			//get errLog file or return error
-			infoFile, err := fileWrite(app.prodInfoLogFile)
+			infoFile, err := fileWrite(infoLogFile)
 			//defer infoFile.Close()
 			if err != nil {
 				return Logger{}, err

@@ -1,4 +1,4 @@
-package storing
+package store
 
 import (
 	"os"
@@ -17,6 +17,7 @@ type Config struct {
 }
 
 func NewConfigPostgres() *Config {
+
 	return &Config{
 		Host:     os.Getenv("POSTGRES_HOST"),
 		Database: os.Getenv("POSTGRES_DATABASE"),

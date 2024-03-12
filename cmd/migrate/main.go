@@ -1,16 +1,15 @@
-package migrate
+package main
 
 import (
 	"snippetbox/pkg"
-	"snippetbox/storing"
+	"snippetbox/storing/store"
 )
 
 func main() {
 	// set up configuration
-	app := pkg.NewApp(pkg.EnvInstanceDev)
-	app.Name("Snippet Box").
-		Logger(pkg.LogInstanceStdLogger).
-		Store(storing.StoreInstancePostgres).
-		Migrate()
+	app := NewApp(EnvInstanceDev)
+	app.Name("Snippet-Migration").
+		Logging(pkg.LogInstanceStdLogger).
+		Storing(store.StorageInstancePostgres).Migrate()
 
 }

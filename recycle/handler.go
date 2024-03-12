@@ -11,11 +11,11 @@ import (
 
 /*type Handler struct {
 	db *sql.DB
-	lg pkg.Logger
+	lg pkg.logger
 	err error
 }
 
-func NewStoreHandler(c *storing.Config, lg pkg.Logger) *sql.DB {
+func NewStoreHandler(c *storing.Config, lg pkg.logger) *sql.DB {
 	var dns = fmt.Sprintf(
 		"host=%s port=%s user=%s dbname=%s sslmode=disable password=%s",
 		c.Host,

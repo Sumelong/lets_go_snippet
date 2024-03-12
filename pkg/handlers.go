@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"html/template"
 	"net/http"
+	"snippetbox/pkg/models/postgres"
 	"strconv"
 )
 
@@ -13,7 +14,15 @@ var (
 )
 
 type Handlers struct {
-	lg Logger
+	lg       Logger
+	snippets *postgres.SnippetModel
+}
+
+func NewHandler(snippets *postgres.SnippetModel, lg Logger) Handlers {
+	return Handlers{
+		snippets: snippets,
+		lg:       lg,
+	}
 }
 
 func (h Handlers) Home(w http.ResponseWriter, r *http.Request) {
@@ -72,7 +81,23 @@ func (h Handlers) CreateSnippet(w http.ResponseWriter, r *http.Request) {
 		//http.Error(w, "Method Not Allowed", 405)
 		return
 	}
-	w.Write([]byte("Create a new snippet..."))
+
+	// Create some variables holding dummy data. We'll remove these later on
+	// during the build.
+	title := "O snail"
+	content := "O snail\nClimb Mount Fuji,\nBut slowly, slowly!\n\n– Kobayashi Issa"
+	expires := "7"
+	// Pass the data to the SnippetModel.Insert() method, receiving the
+	// ID of the new record back.
+	id, err := h.snippets.Insert(title, content, expires)
+	if err != nil {
+		h.serverError(w, err)
+		return
+	}
+	// Redirect the user to the relevant page for the snippet.
+	http.Redirect(w, r, fmt.Sprintf("/snippet?id=%d", id), http.StatusSeeOther)
+
+	//w.Write([]byte(fmt.Sprintf("Create a new snippet with id xxx")))
 }
 func (h Handlers) HealthChecker(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)

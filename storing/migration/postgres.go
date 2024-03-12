@@ -2,42 +2,45 @@ package migration
 
 import (
 	"database/sql"
-	"log"
+	"fmt"
+	"os/exec"
 	"snippetbox/pkg"
 )
 
-func NewPostgresMigration(app pkg.App) {
+func NewPostgresMigration(db *sql.DB, lg pkg.Logger) {
 
-	db := app.Storage
-	lg := app.Logging
 	defer db.Close()
 
-	/*// Create the database
+	// Create the database
 	// Replace "create_db.sh" with the actual path to your script
-	cmd := exec.Command("sh", "create_db.sh")
+	cmd := exec.Command("pg-migrate", "pg.sql")
 	output, err := cmd.CombinedOutput()
 	if err != nil {
-		lg.Error("Error creating database:", err)
-		lg.Info(string(output))
+		lg.Error("Error creating migration: %v", err)
+		lg.Debug(string(output))
 		return
 	}
-	fmt.Println("Database created successfully!")*/
+	fmt.Println("Database created successfully!")
 
-	// Create the snippet table
-	_, err := db.Exec(`CREATE TABLE snippets (
-		id SERIAL PRIMARY KEY,
-		title VARCHAR(255) NOT NULL,
-		content TEXT,
-		created TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-		expires TIMESTAMP);
-		CREATE INDEX idx_snippets_created ON snippets(created);`)
-	if err != nil {
-		lg.Fatal("Error creating table:", err)
+	/*
+		// Create the snippet table
+		_, err := db.Exec(`CREATE TABLE snippets (
+			id SERIAL PRIMARY KEY,
+			title VARCHAR(255) NOT NULL,
+			content TEXT,
+			created TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+			expires TIMESTAMP);
+			CREATE INDEX idx_snippets_created ON snippets(created);`)
+		if err != nil {
+			lg.Fatal("Error creating table:", err)
 
-	}
+		}
+	*/
+
 }
 
-func addSnippets(db *sql.DB, lg pkg.Logger) {
+/*
+func addSnippets(db *sql.DB, lg pkg.logger) {
 	// Create the snippet table
 	_, err := db.Exec(`
 INSERT INTO snippets (title, content, created, expires)
@@ -67,19 +70,14 @@ INSERT INTO snippets (title, content, created, expires) VALUES (
     'First autumn morning\nthe mirror I stare into\nshows my father''s face.\n\n– Murakami Kijo',
     CURRENT_TIMESTAMP,
     CURRENT_TIMESTAMP + INTERVAL '7 days'
-);
-
-
-
-
-`)
+);`)
 
 	if err != nil {
 		lg.Fatal(err.Error())
 	}
 }
 
-func createUser(db *sql.DB, lg pkg.Logger) {
+func createUser(db *sql.DB, lg pkg.logger) {
 	_, err := db.Exec(`
 	-- Create user 'web' with password 'pass'
 	CREATE USER web WITH  ENCRYPTED PASSWORD 'snippets@pass';
@@ -95,3 +93,5 @@ func createUser(db *sql.DB, lg pkg.Logger) {
 		return
 	}
 }
+
+*/

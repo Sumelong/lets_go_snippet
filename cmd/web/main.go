@@ -6,11 +6,11 @@ import (
 
 func main() {
 	// set up configuration
-	app := pkg.NewApp(pkg.EnvInstanceDev)
+	app := NewApp(EnvInstanceDev)
 	app.Name("Snippet Box").
-		Logger(pkg.LogInstanceStdLogger).
-		WebServerAddress("", "").
-		WebServer(pkg.ServerInstanceMux)
-	app.Run()
+		Logging(pkg.LogInstanceStdLogger).
+		WebServerAddress("").
+		WebServer(pkg.ServerInstanceMux).Run()
+	//app.Run()
 
 }

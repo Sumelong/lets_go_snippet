@@ -1,26 +1,32 @@
 package pkg
 
 import (
+	"database/sql"
 	"errors"
 	"fmt"
 	"net/http"
 	"path/filepath"
+	"snippetbox/pkg/models/postgres"
 )
 
 type ServerMux struct {
-	mx  *http.ServeMux
-	hdl Handlers
-	lg  Logger
-	app *App
+	mx   *http.ServeMux
+	hdl  Handlers
+	lg   Logger
+	addr string
 }
 
-func NewServerMux(a *App) (*ServerMux, error) {
+func NewServerMux(lg Logger, addr string, store *sql.DB) (*ServerMux, error) {
+
+	snippets := postgres.NewSnippetModel(store)
+	hnd := NewHandler(snippets, lg)
 
 	// return server
 	return &ServerMux{
-		mx:  http.NewServeMux(),
-		lg:  a.Logging,
-		app: a,
+		mx:   http.NewServeMux(),
+		lg:   lg,
+		addr: addr,
+		hdl:  hnd,
 	}, nil
 }
 
@@ -28,7 +34,7 @@ func (m ServerMux) setHandler(r *http.ServeMux) {
 
 	r.HandleFunc("/health", m.hdl.HealthChecker)
 	r.HandleFunc("/", m.hdl.Home)
-	r.HandleFunc("/snippet/", m.hdl.ShowSnippet)
+	r.HandleFunc("/snippet", m.hdl.ShowSnippet)
 	r.HandleFunc("/snippet/create", m.hdl.CreateSnippet)
 }
 
@@ -54,15 +60,15 @@ func (m ServerMux) Begin() error {
 
 	// Initialize a new http.Server struct. We set the Addr and Handler fields so
 	// that the server uses the same network address and routes as before, and set
-	// the ErrorLog field so that the server now uses the custom errorLog Logging in
+	// the ErrorLog field so that the server now uses the custom errorLog logger in
 	// the event of any problems.
 	srv := &http.Server{
-		Addr:     fmt.Sprintf(":%s", m.app.port),
+		Addr:     fmt.Sprintf(":%s", m.addr),
 		ErrorLog: m.lg.ErrLog,
 		Handler:  m.mx,
 	}
 
-	m.lg.Info("Starting server on %s", m.app.port)
+	m.lg.Info(fmt.Sprintf("server running on port:%s", m.addr))
 
 	// Call the ListenAndServe() method on our new http.Server struct.
 	err := srv.ListenAndServe()
@@ -110,16 +116,15 @@ type IServer interface {
 	Begin() error
 }
 
-type port string
-
 var ErrUnsupportedServer = errors.New("unsupported server")
 
-func NewServerFactory(app *App) (IServer, error) {
-	switch app.serverInstance {
+func NewServerFactory(serverInstance int, lg Logger, addr string, store *sql.DB) (IServer, error) {
+
+	switch serverInstance {
 	case ServerInstanceCustom:
 		return nil, ErrUnsupportedServer
 	case ServerInstanceMux:
-		return NewServerMux(app)
+		return NewServerMux(lg, addr, store)
 	default:
 		return nil, ErrUnsupportedServer
 	}

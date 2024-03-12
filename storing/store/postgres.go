@@ -3,15 +3,12 @@ package store
 import (
 	"database/sql"
 	"fmt"
-	"log"
-	"snippetbox/pkg"
-	"snippetbox/storing"
-
 	_ "github.com/lib/pq"
+	"snippetbox/pkg"
 )
 
 func NewStorePostgres(lg pkg.Logger) *sql.DB {
-	c := storing.NewConfigPostgres()
+	c := NewConfigPostgres()
 
 	var dns = fmt.Sprintf(
 		"host=%s port=%s user=%s dbname=%s sslmode=disable password=%s",
@@ -26,13 +23,14 @@ func NewStorePostgres(lg pkg.Logger) *sql.DB {
 	lg.Info("dsn configuration successful")
 	db, err := sql.Open(c.Driver, dns)
 	if err != nil {
-		log.Fatal("Error connecting to the database:", err)
+		lg.Fatal("Error connecting to the database:", err)
 		return nil
 	}
 
 	err = db.Ping()
 	if err != nil {
-		log.Fatalln(err)
+		lg.Debug(err.Error())
+		//lg.Fatal(err.Error())
 	}
 
 	return db
