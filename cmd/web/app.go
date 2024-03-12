@@ -5,11 +5,14 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"github.com/joho/godotenv"
 	"os"
+	"snippetbox/pkg/domain"
+	"snippetbox/pkg/domain/models"
+	"snippetbox/pkg/logger"
+	"snippetbox/pkg/server"
 	"time"
 
-	"github.com/joho/godotenv"
-	"snippetbox/pkg"
 	"snippetbox/storing/store"
 )
 
@@ -26,13 +29,14 @@ type App struct {
 	name string
 	err  error
 
-	logger pkg.Logger
-	store  *sql.DB
+	logger  logger.Logger
+	store   *sql.DB
+	snippet models.ISnippet
 
 	addr      string
 	staticDir string
 
-	webServer pkg.IServer
+	webServer server.IServer
 
 	ctxTimeout time.Duration
 
@@ -43,7 +47,6 @@ type App struct {
 }
 
 func NewApp(envInstance int) App {
-
 	err := godotenv.Load() // Load variables from .env file
 	if err != nil {
 		fmt.Println("Error loading .env file:", err)
@@ -81,7 +84,7 @@ func (a App) Logging(logInstance int) App {
 	infoLogFile := "logInfo.log"
 	errLogFile := "logErr.log"
 
-	lg, errs := pkg.NewLoggerFactory(a.envInstance, logInstance, errLogFile, infoLogFile)
+	lg, errs := logger.NewLoggerFactory(a.envInstance, logInstance, errLogFile, infoLogFile)
 
 	a.logger = lg
 	a.err = errs
@@ -94,7 +97,16 @@ func (a App) Logging(logInstance int) App {
 func (a App) Storing(storeInstance int) App {
 
 	a.storeInstance = storeInstance
-	a.store = store.NewStoreFactory(storeInstance, a.logger)
+	s := store.NewStoreFactory(storeInstance, a.logger)
+	a.store = s
+	return a
+}
+
+func (a App) Model() App {
+
+	model, err := domain.NewSnippetsFactory(a.storeInstance, a.logger, a.store)
+	a.snippet = model
+	a.err = err
 	return a
 }
 
@@ -105,19 +117,17 @@ func (a App) Migrate() {
 	a.logger.Info("migration completed")
 }
 
-func (a App) WebServerAddress(addr string) App {
-
-	//set port and host of server
+func (a App) WebServerAddress(addr *string) App {
 
 	//check if null and return appConfig to use default value
-	if addr == "" {
-		a.logger.Info(fmt.Sprintf("set port-%s", addr))
+	if addr != nil {
+		a.logger.Info(fmt.Sprintf("set port-%s", *addr))
+		//if not null use provided value
+		a.addr = *addr
+		a.logger.Info(fmt.Sprintf("set port-%s", *addr))
 		return a
 	}
-	//if not null use provided value
-	a.addr = addr
-	a.logger.Info(fmt.Sprintf("set port-%s", addr))
-	a.logger.Info("app address set")
+
 	return a
 
 }
@@ -125,7 +135,7 @@ func (a App) WebServerAddress(addr string) App {
 func (a App) WebServer(serverInstance int) App {
 
 	// assign server from factory to app server
-	srv, err := pkg.NewServerFactory(serverInstance, a.logger, a.addr, a.store)
+	srv, err := server.NewServerFactory(serverInstance, a.logger, a.addr, a.snippet)
 
 	a.webServer = srv
 	a.err = err

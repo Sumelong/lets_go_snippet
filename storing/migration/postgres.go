@@ -4,16 +4,16 @@ import (
 	"database/sql"
 	"fmt"
 	"os/exec"
-	"snippetbox/pkg"
+	"snippetbox/pkg/logger"
 )
 
-func NewPostgresMigration(db *sql.DB, lg pkg.Logger) {
+func NewPostgresMigration(db *sql.DB, lg logger.Logger) {
 
 	defer db.Close()
 
 	// Create the database
 	// Replace "create_db.sh" with the actual path to your script
-	cmd := exec.Command("pg-migrate", "pg.sql")
+	cmd := exec.Command("pg-migrate", "query.sql")
 	output, err := cmd.CombinedOutput()
 	if err != nil {
 		lg.Error("Error creating migration: %v", err)

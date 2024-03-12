@@ -1,32 +1,29 @@
-package pkg
+package server
 
 import (
-	"database/sql"
 	"errors"
 	"fmt"
 	"net/http"
 	"path/filepath"
-	"snippetbox/pkg/models/postgres"
+	"snippetbox/pkg/domain/models"
+	"snippetbox/pkg/logger"
 )
 
 type ServerMux struct {
 	mx   *http.ServeMux
-	hdl  Handlers
-	lg   Logger
+	hdl  *Handlers
+	lg   logger.Logger
 	addr string
 }
 
-func NewServerMux(lg Logger, addr string, store *sql.DB) (*ServerMux, error) {
-
-	snippets := postgres.NewSnippetModel(store)
-	hnd := NewHandler(snippets, lg)
+func NewServerMux(lg logger.Logger, addr string, snippet models.ISnippet) (*ServerMux, error) {
 
 	// return server
 	return &ServerMux{
 		mx:   http.NewServeMux(),
 		lg:   lg,
 		addr: addr,
-		hdl:  hnd,
+		hdl:  NewHandler(snippet, lg),
 	}, nil
 }
 
@@ -118,13 +115,13 @@ type IServer interface {
 
 var ErrUnsupportedServer = errors.New("unsupported server")
 
-func NewServerFactory(serverInstance int, lg Logger, addr string, store *sql.DB) (IServer, error) {
+func NewServerFactory(serverInstance int, lg logger.Logger, addr string, snippet models.ISnippet) (IServer, error) {
 
 	switch serverInstance {
 	case ServerInstanceCustom:
 		return nil, ErrUnsupportedServer
 	case ServerInstanceMux:
-		return NewServerMux(lg, addr, store)
+		return NewServerMux(lg, addr, snippet)
 	default:
 		return nil, ErrUnsupportedServer
 	}

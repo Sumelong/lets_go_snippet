@@ -3,7 +3,7 @@ package store
 import (
 	"database/sql"
 	"errors"
-	"snippetbox/pkg"
+	"snippetbox/pkg/logger"
 	"snippetbox/storing/migration"
 )
 
@@ -19,7 +19,7 @@ type Store struct {
 	sql      *sql.DB
 }
 
-func NewStoreFactory(storeInstance int, lg pkg.Logger) *sql.DB {
+func NewStoreFactory(storeInstance int, lg logger.Logger) *sql.DB {
 
 	switch storeInstance {
 	case StorageInstancePostgres:
@@ -33,7 +33,7 @@ func NewStoreFactory(storeInstance int, lg pkg.Logger) *sql.DB {
 	}
 }
 
-func RunMigration(storeInstance int, db *sql.DB, lg pkg.Logger) {
+func RunMigration(storeInstance int, db *sql.DB, lg logger.Logger) {
 
 	switch storeInstance {
 	case StorageInstancePostgres:

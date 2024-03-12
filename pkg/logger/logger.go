@@ -1,4 +1,4 @@
-package pkg
+package logger
 
 import (
 	"errors"
@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime/debug"
+	"snippetbox/pkg/services"
 )
 
 type ILogger interface {
@@ -129,7 +130,7 @@ func fileWrite(logFile string) (*os.File, error) {
 
 	// Create any directories needed to put this file in them
 	dirPath := "./logs/"
-	dirFileMode := os.ModeDir | (OS_USER_RWX | OS_ALL_R)
+	dirFileMode := os.ModeDir | (services.OS_USER_RWX | services.OS_ALL_R)
 	err := os.MkdirAll(dirPath, dirFileMode)
 	if err != nil {
 		return nil, err

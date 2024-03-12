@@ -2,18 +2,21 @@ package postgres
 
 import (
 	"database/sql"
-	"snippetbox/pkg/models"
+	"snippetbox/pkg/domain/models"
+	"snippetbox/pkg/logger"
 	"time"
 )
 
 // SnippetModel type which wraps a sql.DB connection pool.
 type SnippetModel struct {
 	DB *sql.DB
+	lg logger.ILogger
 }
 
-func NewSnippetModel(db *sql.DB) *SnippetModel {
+func NewSnippet(db *sql.DB, lg logger.ILogger) *SnippetModel {
 	return &SnippetModel{
 		DB: db,
+		lg: lg,
 	}
 }
 

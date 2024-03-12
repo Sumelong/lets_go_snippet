@@ -2,27 +2,20 @@ package store
 
 import (
 	"database/sql"
-	"fmt"
 	"log"
 	_ "modernc.org/sqlite"
-	"snippetbox/pkg"
+	"snippetbox/pkg/logger"
 )
 
-func NewStoreSqlite(lg pkg.Logger) *sql.DB {
-	c := NewConfigSqlite()
+func NewStoreSqlite(lg logger.Logger) *sql.DB {
 
-	var dns = fmt.Sprintf(
-		"host=%s port=%s user=%s dbname=%s sslmode=disable password=%s",
-		c.Host,
-		c.Port,
-		c.User,
-		c.Database,
-		c.Password,
-	)
+	//c := NewConfigSqlite()
+
+	//var dsn = fmt.Sprintf("%s", c.Database)
 
 	//fmt.Println(dns)
 	lg.Info("dns configuration successful")
-	db, err := sql.Open(c.Driver, dns)
+	db, err := sql.Open("sqlite", "snippetbox.sqlite")
 	if err != nil {
 		log.Fatal("Error connecting to the database:", err)
 		return nil

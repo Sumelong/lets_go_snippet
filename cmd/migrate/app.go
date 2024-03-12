@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"github.com/joho/godotenv"
 	"os"
-	"snippetbox/pkg"
+	"snippetbox/pkg/logger"
 	"snippetbox/storing/store"
 )
 
@@ -23,7 +23,7 @@ type App struct {
 	name string
 	err  error
 
-	logger pkg.Logger
+	logger logger.Logger
 	store  *sql.DB
 
 	prodErrLogFile  string
@@ -68,7 +68,7 @@ func (a App) Logging(logInstance int) App {
 	infoLogFile := "logInfo.log"
 	errLogFile := "logErr.log"
 
-	lg, errs := pkg.NewLoggerFactory(a.envInstance, logInstance, errLogFile, infoLogFile)
+	lg, errs := logger.NewLoggerFactory(a.envInstance, logInstance, errLogFile, infoLogFile)
 
 	a.logger = lg
 	a.err = errs

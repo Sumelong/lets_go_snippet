@@ -2,10 +2,10 @@ package migration
 
 import (
 	"database/sql"
-	"snippetbox/pkg"
+	"snippetbox/pkg/logger"
 )
 
-func NewSqliteMigration(db *sql.DB, lg pkg.Logger) {
+func NewSqliteMigration(db *sql.DB, lg logger.Logger) {
 
 	defer db.Close()
 

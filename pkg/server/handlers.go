@@ -1,11 +1,12 @@
-package pkg
+package server
 
 import (
 	"errors"
 	"fmt"
 	"html/template"
 	"net/http"
-	"snippetbox/pkg/models/postgres"
+	"snippetbox/pkg/domain/models"
+	"snippetbox/pkg/logger"
 	"strconv"
 )
 
@@ -14,13 +15,13 @@ var (
 )
 
 type Handlers struct {
-	lg       Logger
-	snippets *postgres.SnippetModel
+	lg       logger.Logger
+	snippets models.ISnippet
 }
 
-func NewHandler(snippets *postgres.SnippetModel, lg Logger) Handlers {
-	return Handlers{
-		snippets: snippets,
+func NewHandler(snippet models.ISnippet, lg logger.Logger) *Handlers {
+	return &Handlers{
+		snippets: snippet,
 		lg:       lg,
 	}
 }
@@ -64,15 +65,28 @@ func (h Handlers) Home(w http.ResponseWriter, r *http.Request) {
 
 }
 func (h Handlers) ShowSnippet(w http.ResponseWriter, r *http.Request) {
+
 	id, err := strconv.Atoi(r.URL.Query().Get("id"))
 	if err != nil || id < 1 {
-		//return error
-		http.NotFound(w, r)
-		//log error
-		h.lg.Info(err.Error(), err)
+		h.notFound(w)
 		return
 	}
-	fmt.Fprintf(w, "Display a specific snippet with ID %d...", id)
+	// Use the SnippetModel object's Get method to retrieve the data for a
+	// specific record based on its ID. If no matching record is found,
+	// return a 404 Not Found response.
+	s, err := h.snippets.Get(id)
+	if err != nil {
+		if errors.Is(err, models.ErrNoRecord) {
+			h.notFound(w)
+		} else {
+			h.serverError(w, err)
+		}
+		return
+	}
+	// Write the snippet data as a plain-text HTTP response body.
+	fmt.Fprintf(w, "%v", &s)
+
+	//fmt.Fprintf(w, "Display a specific snippet with ID %d...", id)
 }
 func (h Handlers) CreateSnippet(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {

@@ -7,7 +7,8 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"snippetbox/pkg"
+	"snippetbox/pkg/logger"
+	"snippetbox/pkg/server"
 	"snippetbox/storing/store"
 	"time"
 )
@@ -25,13 +26,13 @@ type App struct {
 	name string
 	err  error
 
-	logger pkg.Logger
+	logger logger.Logger
 	Store  *sql.DB
 
 	addr      string
 	staticDir string
 
-	webServer pkg.IServer
+	webServer server.IServer
 
 	ctxTimeout time.Duration
 
@@ -63,7 +64,7 @@ func (a *App) Logging(logInstance int) *App {
 	infoLogFile := "logInfo.log"
 	errLogFile := "logErr.log"
 
-	lg, errs := pkg.NewLoggerFactory(a.envInstance, logInstance, errLogFile, infoLogFile)
+	lg, errs := logger.NewLoggerFactory(a.envInstance, logInstance, errLogFile, infoLogFile)
 
 	a.logger = lg
 	a.err = errs
@@ -119,7 +120,7 @@ func (a *App) WebServerAddress(addr string) *App {
 func (a *App) WebServer(serverInstance int) *App {
 
 	// assign server from factory to app server
-	srv, err := pkg.NewServerFactory(serverInstance, a.logger, a.addr)
+	srv, err := server.NewServerFactory(serverInstance, a.logger, a.addr)
 
 	a.webServer = srv
 	a.err = err

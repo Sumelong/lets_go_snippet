@@ -30,11 +30,7 @@ func NewConfigPostgres() *Config {
 
 func NewConfigSqlite() *Config {
 	return &Config{
-		Host:     os.Getenv("SQLITE_HOST"),
 		Database: os.Getenv("SQLITE_DATABASE"),
-		Port:     os.Getenv("SQLITE_PORT"),
 		Driver:   os.Getenv("SQLITE_DRIVER"),
-		User:     os.Getenv("SQLITE_USER"),
-		Password: os.Getenv("SQLITE_PASSWORD"),
 	}
 }

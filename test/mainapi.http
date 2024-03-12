@@ -6,4 +6,4 @@ GET {{host}}/
 
 
 ### GET request
-GET {{host}}/snippet?id=25
+GET {{host}}/snippet?id=1

@@ -4,10 +4,10 @@ import (
 	"database/sql"
 	"fmt"
 	_ "github.com/lib/pq"
-	"snippetbox/pkg"
+	"snippetbox/pkg/logger"
 )
 
-func NewStorePostgres(lg pkg.Logger) *sql.DB {
+func NewStorePostgres(lg logger.Logger) *sql.DB {
 	c := NewConfigPostgres()
 
 	var dns = fmt.Sprintf(
