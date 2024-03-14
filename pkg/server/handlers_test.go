@@ -1,17 +1,22 @@
 package server
 
 import (
+	"bytes"
 	"net/http"
+	"net/http/httptest"
 	"reflect"
 	"snippetbox/pkg/domain/models"
+	"snippetbox/pkg/domain/postgres"
 	"snippetbox/pkg/logger"
+	"snippetbox/storing/store"
 	"testing"
 )
 
-/*
-lg := logger.NewLogger()
+func TestHandlers_CreateSnippet(t *testing.T) {
+
+	lg := logger.NewLogger()
 	db := store.NewStoreSqlite(lg)
-	snippet := sqlite.NewSnippet(db, lg)
+	model := postgres.NewSnippet(db, lg)
 
 	// Create a mock request
 	req := httptest.NewRequest(http.MethodPost, "/snippets/create", bytes.NewReader(nil))
@@ -19,9 +24,7 @@ lg := logger.NewLogger()
 
 	// Create a recorder to capture the response
 	rr := httptest.NewRecorder()
-*/
 
-func TestHandlers_CreateSnippet(t *testing.T) {
 	type fields struct {
 		lg       logger.Logger
 		snippets models.ISnippet
@@ -35,7 +38,17 @@ func TestHandlers_CreateSnippet(t *testing.T) {
 		fields fields
 		args   args
 	}{
-		// TODO: Add test cases.
+		{
+			name: "valid-test",
+			fields: fields{
+				lg:       lg,
+				snippets: model,
+			},
+			args: args{
+				w: rr,
+				r: req,
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

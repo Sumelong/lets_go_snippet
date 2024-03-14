@@ -32,7 +32,16 @@ func (h Handlers) Home(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Initialize a slice containing the paths to the two files. Note that the
+	s, err := h.snippets.Latest()
+	if err != nil {
+		h.serverError(w, err)
+		return
+	}
+	for _, snippet := range s {
+		fmt.Fprintf(w, "%v\n", snippet)
+	}
+
+	/*// Initialize a slice containing the paths to the two files. Note that the
 	// home.page.tmpl file must be the *first* file in the slice.
 	files := []string{
 		"./ui/html/home.page.tmpl",
@@ -61,7 +70,7 @@ func (h Handlers) Home(w http.ResponseWriter, r *http.Request) {
 	err = ts.Execute(w, nil)
 	if err != nil {
 		h.serverError(w, err) // Use the serverError() helper.
-	}
+	}*/
 
 }
 func (h Handlers) ShowSnippet(w http.ResponseWriter, r *http.Request) {
@@ -83,8 +92,42 @@ func (h Handlers) ShowSnippet(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
+	// Create an instance of a templateData struct holding the snippet data.
+	data := &templateData{Snippet: s}
+
+	// Initialize a slice containing the paths to the two files. Note that the
+	// home.page.tmpl file must be the *first* file in the slice.
+	files := []string{
+		"./ui/html/show.page.tmpl",
+		"./ui/html/base.layout.tmpl",
+		"./ui/html/footer.partial.tmpl",
+	}
+
+	// Use the template.ParseFiles() function to read the template file into a
+	// template set. If there's an error, we log the detailed error message and use
+	// the http.Error() function to send a generic 500 Internal Server Error
+	// response to the user.
+	ts, err := template.ParseFiles(files...)
+	if err != nil {
+		//log error
+		//h.lg.Info(err.Error(), err)
+
+		h.serverError(w, err) // Use the serverError() helper.
+
+		//return error
+		//http.Error(w, ErrInternalServerErr.Error(), http.StatusInternalServerError)
+		return
+	}
+	// We then use the Execute() method on the template set to write the template
+	// content as the response body. The last parameter to Execute() represents any
+	// dynamic data that we want to pass in, which for now we'll leave as nil.
+	err = ts.Execute(w, data)
+	if err != nil {
+		h.serverError(w, err) // Use the serverError() helper.
+	}
+
 	// Write the snippet data as a plain-text HTTP response body.
-	fmt.Fprintf(w, "%v", &s)
+	//fmt.Fprintf(w, "%v", s)
 
 	//fmt.Fprintf(w, "Display a specific snippet with ID %d...", id)
 }

@@ -2,19 +2,11 @@ package services
 
 import (
 	"fmt"
-	"github.com/joho/godotenv"
 	"os"
 	"path/filepath"
 )
 
-func LoadEnv() error {
-
-	env, err := FindFile(".env")
-	err = godotenv.Load(env) // Load variables from .env file
-	return err
-}
-
-func findDotEnv() (string, error) {
+func FindFile(file string) (string, error) {
 	// Get the current working directory
 	wd, err := os.Getwd()
 	if err != nil {
@@ -23,7 +15,7 @@ func findDotEnv() (string, error) {
 
 	// Navigate upwards in the directory hierarchy until we find the .env file
 	for {
-		envPath := filepath.Join(wd, ".env")
+		envPath := filepath.Join(wd, file)
 		_, err = os.Stat(envPath)
 		if err == nil {
 			// .env file found
