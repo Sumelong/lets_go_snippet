@@ -1,4 +1,4 @@
-package server
+package controller
 
 import (
 	"bytes"
@@ -52,8 +52,8 @@ func TestHandlers_CreateSnippet(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			h := Handlers{
-				lg:       tt.fields.lg,
+			h := Controller{
+				logger:   tt.fields.lg,
 				snippets: tt.fields.snippets,
 			}
 			h.CreateSnippet(tt.args.w, tt.args.r)
@@ -79,8 +79,8 @@ func TestHandlers_HealthChecker(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			h := Handlers{
-				lg:       tt.fields.lg,
+			h := Controller{
+				logger:   tt.fields.lg,
 				snippets: tt.fields.snippets,
 			}
 			h.HealthChecker(tt.args.w, tt.args.r)
@@ -106,8 +106,8 @@ func TestHandlers_Home(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			h := Handlers{
-				lg:       tt.fields.lg,
+			h := Controller{
+				logger:   tt.fields.lg,
 				snippets: tt.fields.snippets,
 			}
 			h.Home(tt.args.w, tt.args.r)
@@ -133,8 +133,8 @@ func TestHandlers_ServeHTTP(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			h := Handlers{
-				lg:       tt.fields.lg,
+			h := Controller{
+				logger:   tt.fields.lg,
 				snippets: tt.fields.snippets,
 			}
 			h.ServeHTTP(tt.args.w, tt.args.r)
@@ -160,8 +160,8 @@ func TestHandlers_ShowSnippet(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			h := Handlers{
-				lg:       tt.fields.lg,
+			h := Controller{
+				logger:   tt.fields.lg,
 				snippets: tt.fields.snippets,
 			}
 			h.ShowSnippet(tt.args.w, tt.args.r)
@@ -177,14 +177,14 @@ func TestNewHandler(t *testing.T) {
 	tests := []struct {
 		name string
 		args args
-		want *Handlers
+		want *Controller
 	}{
 		// TODO: Add test cases.
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := NewHandler(tt.args.snippet, tt.args.lg); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("NewHandler() = %v, want %v", got, tt.want)
+			if got := NewController(tt.args.snippet, tt.args.lg); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("NewController() = %v, want %v", got, tt.want)
 			}
 		})
 	}

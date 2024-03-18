@@ -7,10 +7,10 @@ import (
 	"fmt"
 	"github.com/joho/godotenv"
 	"os"
+	"snippetbox/cmd/web/server"
 	"snippetbox/pkg/domain"
 	"snippetbox/pkg/domain/models"
 	"snippetbox/pkg/logger"
-	"snippetbox/pkg/server"
 	"time"
 
 	"snippetbox/storing/store"
@@ -140,7 +140,7 @@ func (a App) WebServer(serverInstance int) App {
 	a.webServer = srv
 	a.err = err
 
-	a.logger.Info("app server configured", nil)
+	a.logger.Info("webserver %d configured", serverInstance)
 
 	return a
 }

@@ -35,23 +35,20 @@ func NewLogger() Logger {
 }
 
 func (l Logger) Error(format string, args ...any) {
-	l.ErrLog.Printf(format, args)
+	l.ErrLog.Printf(format, args...)
 }
 
 func (l Logger) Info(format string, args ...any) {
-	l.InfoLog.Printf(format, args)
+	l.InfoLog.Printf(format, args...)
 }
 
 func (l Logger) Debug(format string, args ...any) {
-	//l.ErrLog.Printf(format, args)
-
 	trace := fmt.Sprintf("%s\n%s", format, debug.Stack())
 	l.ErrLog.Output(1, trace)
-	//lg.Fatal(err.Error())
 }
 
 func (l Logger) Fatal(format string, args ...any) {
-	l.ErrLog.Fatalf(format, args)
+	l.ErrLog.Fatalf(format, args...)
 }
 
 //************* LOGGER FACTORY *********************///

@@ -1,8 +1,8 @@
 package main
 
 import (
+	"snippetbox/cmd/web/server"
 	"snippetbox/pkg/logger"
-	"snippetbox/pkg/server"
 	"snippetbox/storing/store"
 )
 
@@ -14,7 +14,7 @@ func main() {
 		Storing(store.StorageInstanceSqlite).
 		Model().
 		WebServerAddress(nil).
-		WebServer(server.ServerInstanceMux).Run()
+		WebServer(server.ServeInstancePat).Run()
 	//app.Run()
 
 }

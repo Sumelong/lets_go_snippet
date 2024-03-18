@@ -7,8 +7,8 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"snippetbox/cmd/web/server"
 	"snippetbox/pkg/logger"
-	"snippetbox/pkg/server"
 	"snippetbox/storing/store"
 	"time"
 )
