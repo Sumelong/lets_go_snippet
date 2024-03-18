@@ -2,13 +2,14 @@ package server
 
 import (
 	"fmt"
+	"net/http"
+	"time"
+
 	"github.com/bmizerany/pat"
 	"github.com/justinas/alice"
-	"net/http"
 	"snippetbox/cmd/web/controller"
 	"snippetbox/pkg/domain/models"
 	"snippetbox/pkg/logger"
-	"time"
 )
 
 type Pat struct {
@@ -60,7 +61,7 @@ func (s *Pat) routes() http.Handler {
 
 	//So to ensure that the exact match takes preference,
 	//we register the wildcard routes.
-	s.router.Get("/snippet/:id", http.HandlerFunc(s.controller.ShowSnippet))
+	s.router.Get("/snippet:id", http.HandlerFunc(s.controller.ShowSnippet))
 
 	// Return the 'standard' middleware chain followed by the servemux router.
 	return standardMiddleware.Then(s.router)

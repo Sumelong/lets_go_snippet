@@ -58,11 +58,7 @@ func (c *Controller) Home(w http.ResponseWriter, r *http.Request) {
 }
 func (c *Controller) ShowSnippet(w http.ResponseWriter, r *http.Request) {
 
-	q := r.URL.Query()
-	q.Add("id", r.Param("account_id"))
-	r.URL.RawQuery = q.Encode()
-
-	id, err := strconv.Atoi(r.URL.Query().Get("id"))
+	id, err := strconv.Atoi(r.URL.Query().Get("snippet_id"))
 	if err != nil || id < 1 {
 		c.notFound(w)
 		return
@@ -107,7 +103,10 @@ func (c *Controller) CreateSnippet(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	// Redirect the user to the relevant page for the snippet.
-	http.Redirect(w, r, fmt.Sprintf("/snippet?id=%d", id), http.StatusSeeOther)
+	//http.Redirect(w, r, fmt.Sprintf("/snippet?id=%d", id), http.StatusSeeOther)
+
+	// Change the redirect to use the new semantic URL style of /snippet/:id
+	http.Redirect(w, r, fmt.Sprintf("/snippet/%d", id), http.StatusSeeOther)
 
 	//w.Write([]byte(fmt.Sprintf("Create a new snippet with id xxx")))
 }

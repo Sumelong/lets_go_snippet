@@ -2,7 +2,7 @@
 POST {{host}}/snippet/create
 
 ### GET request
-GET {{host}}/snippet/5
+GET {{host}}/snippet?id=5
 
 ### GET request
 GET {{host}}/

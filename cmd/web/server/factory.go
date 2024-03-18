@@ -9,6 +9,7 @@ import (
 const (
 	ServeInstancePat int = iota
 	ServeInstanceMux
+	ServeInstanceGorilla
 )
 
 type IServer interface {
@@ -24,6 +25,8 @@ func NewServerFactory(serverInstance int, lg logger.Logger, addr string, snippet
 		return NewPat(lg, addr, snippet)
 	case ServeInstanceMux:
 		return NewMux(lg, addr, snippet)
+	case ServeInstanceGorilla:
+		return NewGorilla(lg, addr, snippet)
 	default:
 		return nil, ErrUnsupportedServer
 	}

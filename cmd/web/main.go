@@ -14,7 +14,7 @@ func main() {
 		Storing(store.StorageInstanceSqlite).
 		Model().
 		WebServerAddress(nil).
-		WebServer(server.ServeInstancePat).Run()
+		WebServer(server.ServeInstanceGorilla).Run()
 	//app.Run()
 
 }
