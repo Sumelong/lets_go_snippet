@@ -1,6 +1,5 @@
 package handlers
 
-import "C"
 import (
 	"errors"
 	"fmt"
