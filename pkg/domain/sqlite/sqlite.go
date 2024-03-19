@@ -3,9 +3,9 @@ package sqlite
 import (
 	"database/sql"
 	"errors"
+	"fmt"
 	"snippetbox/pkg/domain/models"
 	"snippetbox/pkg/logger"
-	"time"
 )
 
 // SnippetModel type which wraps a sql.DB connection pool.
@@ -22,15 +22,13 @@ func NewSnippet(db *sql.DB, lg logger.ILogger) *SnippetModel {
 }
 
 // Insert a new snippet into the database.
-func (m *SnippetModel) Insert(title, content, expires string) (int, error) {
+func (m *SnippetModel) Insert(title, content, expire string) (int, error) {
 
-	createdAt := time.Now()
-	duration, err := time.ParseDuration(expires)
-	expiresAt := time.Now().Add(time.Hour * 24 * duration)
+	exp := fmt.Sprintf("+%s days", expire)
+	stmt := `INSERT INTO snippets (title, content, created, expires) 
+			 VALUES(?, ?, CURRENT_TIMESTAMP, DATETIME(CURRENT_TIMESTAMP,?))`
 
-	stmt := "INSERT INTO snippets (title, content, created, expires) VALUES(?, ?, ?, ?)"
-
-	result, err := m.DB.Exec(stmt, title, content, createdAt, expiresAt)
+	result, err := m.DB.Exec(stmt, title, content, exp)
 	if err != nil {
 		m.lg.Error(err.Error())
 		return 0, err

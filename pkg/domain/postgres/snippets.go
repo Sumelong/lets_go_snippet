@@ -28,7 +28,7 @@ func (m *SnippetModel) Insert(title, content, expires string) (int, error) {
 	expiresAt := time.Now().Add(time.Hour * 24 * duration)
 
 	stmt := `INSERT INTO snippets (title, content, created, expires)
-				VALUES($1, $2, $4, $5  )`
+				VALUES($1, $2, $3, $4  )`
 
 	result, err := m.DB.Exec(stmt, title, content, createdAt, expiresAt)
 	if err != nil {

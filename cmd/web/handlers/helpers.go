@@ -36,7 +36,7 @@ func (h *Handle) notFound(w http.ResponseWriter) {
 // struct, adds the current year to the CurrentYear field, and then returns
 // the pointer. Again, we're not using the *http.Request parameter at the
 // moment, but we will do later in the book.
-func (h *Handle) addDefaultData(td *cache.TemplateData, r *http.Request) *cache.TemplateData {
+func (h *Handle) addDefaultData(td *cache.TemplateData, _ *http.Request) *cache.TemplateData {
 	if td == nil {
 		td = &cache.TemplateData{}
 	}

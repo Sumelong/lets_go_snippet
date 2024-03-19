@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"snippetbox/cmd/web/cache"
 	"snippetbox/pkg/domain/models"
+	"snippetbox/pkg/forms"
 	"snippetbox/pkg/logger"
 	"strconv"
 )
@@ -101,21 +102,27 @@ func (h *Handle) CreateSnippet(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Use the r.PostForm.Get() method to retrieve the relevant data fields
-	// from the r.PostForm map.
-	title := r.PostForm.Get("title")
-	content := r.PostForm.Get("content")
-	expires := r.PostForm.Get("expires")
-
-	// Pass the data to the SnippetModel.Insert() method, receiving the
-	// ID of the new record back.
-	id, err := h.snippets.Insert(title, content, expires)
+	// Create a new forms.Form struct containing the POSTed data from the
+	// form, then use the validation methods to check the content.
+	form := forms.NewForm(r.PostForm)
+	form.Required("title", "content", "expires")
+	form.IsString("title", "content")
+	form.MaxLength("title", 100)
+	form.PermittedValues("expires", "365", "7", "1")
+	// If the form isn't valid, redisplay the template passing in the
+	// form.Form object as the data.
+	if !form.Valid() {
+		h.render(w, r, "create.page.tmpl", &cache.TemplateData{Form: form})
+		return
+	}
+	// Because the form data (with type url.Values) has been anonymously embedded
+	// in the form.Form struct, we can use the Get() method to retrieve
+	// the validated value for a particular form field.
+	id, err := h.snippets.Insert(form.Values.Get("title"), form.Values.Get("content"), form.Values.Get("expires"))
 	if err != nil {
 		h.serverError(w, err)
 		return
 	}
-	// Redirect the user to the relevant page for the snippet.
-	//http.Redirect(w, r, fmt.Sprintf("/snippet?id=%d", id), http.StatusSeeOther)
 
 	// Change the redirect to use the new semantic URL style of /snippet/:id
 	http.Redirect(w, r, fmt.Sprintf("/snippet/%d", id), http.StatusSeeOther)
