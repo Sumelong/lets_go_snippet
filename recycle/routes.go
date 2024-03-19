@@ -1,15 +1,7 @@
 package recycle
 
-import (
-	"net/http"
-	"path/filepath"
-	"snippetbox/cmd/web/server"
-
-	"github.com/bmizerany/pat"
-	"github.com/justinas/alice"
-)
-
-func routes(s *server.Mux) http.Handler {
+/*
+func routes(s *server.GoMux) http.Handler {
 	//flag.StringVar(&m.app.port, "addr", "4000", "HTTP network address")
 	//flag.Parse()
 
@@ -64,3 +56,4 @@ func (nfs neuteredFileSystem) Open(path string) (http.File, error) {
 
 	return f, nil
 }
+*/

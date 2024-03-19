@@ -1,12 +1,6 @@
 package helpers
 
-import (
-	"bufio"
-	"fmt"
-	"os"
-	"strings"
-)
-
+/*
 func LoadEnv(filePath string) error {
 	file, err := os.Open(filePath)
 	if err != nil {
@@ -32,3 +26,4 @@ func LoadEnv(filePath string) error {
 
 	return scanner.Err()
 }
+*/

@@ -2,25 +2,24 @@ package server
 
 import (
 	"fmt"
+	"github.com/gorilla/pat"
+	"github.com/justinas/alice"
 	"net/http"
 	"path/filepath"
 	"snippetbox/cmd/web/handlers"
-	"time"
-
-	"github.com/bmizerany/pat"
-	"github.com/justinas/alice"
 	"snippetbox/pkg/domain/models"
 	"snippetbox/pkg/logger"
+	"time"
 )
 
-type Pat struct {
-	router *pat.PatternServeMux
+type GorillaPat struct {
+	router *pat.Router
 	handle *handlers.Handle
 	logger logger.Logger
 	addr   string
 }
 
-func NewPat(lg logger.Logger, addr string, snippet models.ISnippet) (*Pat, error) {
+func NewGorillaPat(lg logger.Logger, addr string, snippet models.ISnippet) (*GorillaPat, error) {
 
 	h, err := handlers.NewHandle(snippet, lg)
 	if err != nil {
@@ -28,7 +27,7 @@ func NewPat(lg logger.Logger, addr string, snippet models.ISnippet) (*Pat, error
 	}
 
 	// return server
-	return &Pat{
+	return &GorillaPat{
 		router: pat.New(),
 		logger: lg,
 		addr:   addr,
@@ -36,7 +35,7 @@ func NewPat(lg logger.Logger, addr string, snippet models.ISnippet) (*Pat, error
 	}, nil
 }
 
-func (s *Pat) routes() http.Handler {
+func (s *GorillaPat) routes() http.Handler {
 	//flag.StringVar(&m.app.port, "addr", "4000", "HTTP network address")
 	//flag.Parse()
 
@@ -44,50 +43,47 @@ func (s *Pat) routes() http.Handler {
 	// which will be used for every request our application receives.
 	standardMiddleware := alice.New(s.handle.RecoverPanic, s.handle.LogRequest, s.handle.SecureHeaders)
 
-	// Create a file server which serves files out of the "./ui/static" directory.
-	//	// Note that the path given to the http.Dir function is relative to the project
-	//	// directory root.
-
 	dir := filepath.Join(".", "ui", "static")
 	fileServer := http.FileServer(http.Dir(dir))
-	s.router.Get("/static", http.NotFoundHandler())
-	s.router.Get("/static/", http.StripPrefix("/static", fileServer))
+	http.StripPrefix("/static", fileServer)
+	s.router.Handle("/static/", http.StripPrefix("/static", fileServer))
 
 	//s.router.PathPrefix("/static/").Handler(http.StripPrefix("/static/", http.FileServer(http.Dir(dir))))
-	s.router.Get("/health", http.HandlerFunc(s.healthCheckerHandler))
-	s.router.Get("/", http.HandlerFunc(s.homeHandler))
-	s.router.Get("/snippet/create", http.HandlerFunc(s.createSnippetFormHandler))
-	s.router.Post("/snippet/create", http.HandlerFunc(s.createSnippetHandler))
-	s.router.Get("/snippet/:id", http.HandlerFunc(s.showSnippetHandler))
 
-	// Return the 'standard' middleware chain followed by the servemux router.
+	s.router.Get("/health", s.healthCheckerHandler)
+	s.router.Get("/", s.homeHandler)
+	s.router.Get("/snippet/{id}", s.showSnippetHandler)
+	s.router.Get("/snippet/create", s.createSnippetHandler)
+	s.router.Post("/snippet/create", s.createSnippetFormHandler)
+
 	return standardMiddleware.Then(s.router)
 }
 
-func (s *Pat) healthCheckerHandler(w http.ResponseWriter, r *http.Request) {
+func (s *GorillaPat) healthCheckerHandler(w http.ResponseWriter, r *http.Request) {
 	s.handle.HealthChecker(w, r)
 }
 
-func (s *Pat) homeHandler(w http.ResponseWriter, r *http.Request) {
+func (s *GorillaPat) homeHandler(w http.ResponseWriter, r *http.Request) {
 	s.handle.Home(w, r)
 }
 
-func (s *Pat) showSnippetHandler(w http.ResponseWriter, r *http.Request) {
+func (s *GorillaPat) showSnippetHandler(w http.ResponseWriter, r *http.Request) {
+
 	q := r.URL.Query()
 	q.Add("snippet_id", q.Get(":id"))
 	r.URL.RawQuery = q.Encode()
 	s.handle.ShowSnippet(w, r)
 }
 
-func (s *Pat) createSnippetHandler(w http.ResponseWriter, r *http.Request) {
+func (s *GorillaPat) createSnippetHandler(w http.ResponseWriter, r *http.Request) {
 	s.handle.CreateSnippet(w, r)
 }
 
-func (s *Pat) createSnippetFormHandler(w http.ResponseWriter, r *http.Request) {
+func (s *GorillaPat) createSnippetFormHandler(w http.ResponseWriter, r *http.Request) {
 	s.handle.CreateSnippetForm(w, r)
 }
 
-func (s *Pat) Begin() error {
+func (s *GorillaPat) Begin() error {
 
 	//set handle
 	//routes(s)

@@ -7,36 +7,35 @@ import (
 	"snippetbox/cmd/web/handlers"
 	"time"
 
-	"github.com/bmizerany/pat"
 	"github.com/justinas/alice"
 	"snippetbox/pkg/domain/models"
 	"snippetbox/pkg/logger"
 )
 
-type Pat struct {
-	router *pat.PatternServeMux
+type GoMux struct {
+	router *http.ServeMux
 	handle *handlers.Handle
 	logger logger.Logger
 	addr   string
 }
 
-func NewPat(lg logger.Logger, addr string, snippet models.ISnippet) (*Pat, error) {
+func NewGoMux(lg logger.Logger, addr string, snippet models.ISnippet) (*GoMux, error) {
 
-	h, err := handlers.NewHandle(snippet, lg)
+	c, err := handlers.NewHandle(snippet, lg)
 	if err != nil {
 		return nil, err
 	}
 
 	// return server
-	return &Pat{
-		router: pat.New(),
+	return &GoMux{
+		router: http.NewServeMux(),
 		logger: lg,
 		addr:   addr,
-		handle: h,
+		handle: c,
 	}, nil
 }
 
-func (s *Pat) routes() http.Handler {
+func (s *GoMux) routes() http.Handler {
 	//flag.StringVar(&m.app.port, "addr", "4000", "HTTP network address")
 	//flag.Parse()
 
@@ -44,55 +43,53 @@ func (s *Pat) routes() http.Handler {
 	// which will be used for every request our application receives.
 	standardMiddleware := alice.New(s.handle.RecoverPanic, s.handle.LogRequest, s.handle.SecureHeaders)
 
-	// Create a file server which serves files out of the "./ui/static" directory.
-	//	// Note that the path given to the http.Dir function is relative to the project
-	//	// directory root.
-
 	dir := filepath.Join(".", "ui", "static")
 	fileServer := http.FileServer(http.Dir(dir))
-	s.router.Get("/static", http.NotFoundHandler())
-	s.router.Get("/static/", http.StripPrefix("/static", fileServer))
+	s.router.Handle("/static", http.NotFoundHandler())
+	s.router.Handle("/static/", http.StripPrefix("/static", fileServer))
 
-	//s.router.PathPrefix("/static/").Handler(http.StripPrefix("/static/", http.FileServer(http.Dir(dir))))
-	s.router.Get("/health", http.HandlerFunc(s.healthCheckerHandler))
-	s.router.Get("/", http.HandlerFunc(s.homeHandler))
-	s.router.Get("/snippet/create", http.HandlerFunc(s.createSnippetFormHandler))
-	s.router.Post("/snippet/create", http.HandlerFunc(s.createSnippetHandler))
-	s.router.Get("/snippet/:id", http.HandlerFunc(s.showSnippetHandler))
+	//s.router.PathPrefix("/static/").Handle(http.StripPrefix("/static/", http.FileServer(http.Dir(dir))))
+
+	s.router.HandleFunc("/health", s.healthCheckerHandler)
+	s.router.HandleFunc("/", s.homeHandler)
+	s.router.HandleFunc("/snippet/{id}", s.showSnippetHandler)
+	s.router.HandleFunc("/snippet/create", s.createSnippetHandler)
+	s.router.HandleFunc("/snippet/create", s.createSnippetFormHandler)
 
 	// Return the 'standard' middleware chain followed by the servemux router.
 	return standardMiddleware.Then(s.router)
+
 }
 
-func (s *Pat) healthCheckerHandler(w http.ResponseWriter, r *http.Request) {
+func (s *GoMux) healthCheckerHandler(w http.ResponseWriter, r *http.Request) {
 	s.handle.HealthChecker(w, r)
 }
 
-func (s *Pat) homeHandler(w http.ResponseWriter, r *http.Request) {
+func (s *GoMux) homeHandler(w http.ResponseWriter, r *http.Request) {
 	s.handle.Home(w, r)
 }
 
-func (s *Pat) showSnippetHandler(w http.ResponseWriter, r *http.Request) {
+func (s *GoMux) showSnippetHandler(w http.ResponseWriter, r *http.Request) {
 	q := r.URL.Query()
-	q.Add("snippet_id", q.Get(":id"))
+	q.Add("snippet_id", q.Get("id"))
 	r.URL.RawQuery = q.Encode()
 	s.handle.ShowSnippet(w, r)
 }
 
-func (s *Pat) createSnippetHandler(w http.ResponseWriter, r *http.Request) {
+func (s *GoMux) createSnippetHandler(w http.ResponseWriter, r *http.Request) {
 	s.handle.CreateSnippet(w, r)
 }
 
-func (s *Pat) createSnippetFormHandler(w http.ResponseWriter, r *http.Request) {
+func (s *GoMux) createSnippetFormHandler(w http.ResponseWriter, r *http.Request) {
 	s.handle.CreateSnippetForm(w, r)
 }
 
-func (s *Pat) Begin() error {
+func (s *GoMux) Begin() error {
 
 	//set handle
 	//routes(s)
 
-	// Initialize a new http.Server struct. We set the Addr and Handler fields so
+	// Initialize a new http.Server struct. We set the Addr and Handle fields so
 	// that the server uses the same network address and routes as before, and set
 	// the ErrorLog field so that the server now uses the custom errorLog logger in
 	// the event of any problems.

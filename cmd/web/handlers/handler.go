@@ -1,11 +1,13 @@
-package controller
+package handlers
 
+import "C"
 import (
 	"errors"
 	"fmt"
 	"html/template"
 	"net/http"
 	"path/filepath"
+	"snippetbox/cmd/web/cache"
 	"snippetbox/pkg/domain/models"
 	"snippetbox/pkg/logger"
 	"strconv"
@@ -15,29 +17,29 @@ var (
 	ErrInternalServerErr = errors.New("internal Server Error")
 )
 
-type Controller struct {
+type Handle struct {
 	logger        logger.Logger
 	snippets      models.ISnippet
 	templateCache map[string]*template.Template
 }
 
-func NewController(snippet models.ISnippet, lg logger.Logger) (*Controller, error) {
+func NewHandle(snippet models.ISnippet, lg logger.Logger) (*Handle, error) {
 
 	// Initialize a new template cache...
 	dir := filepath.Join(".", "ui", "html") // "./ui/html/"
-	templateCache, err := NewTemplateCache(dir)
+	templateCache, err := cache.NewTemplateCache(dir)
 	if err != nil {
 		return nil, err
 	}
 
-	return &Controller{
+	return &Handle{
 		snippets:      snippet,
 		logger:        lg,
 		templateCache: templateCache,
 	}, nil
 }
 
-func (c *Controller) Home(w http.ResponseWriter, r *http.Request) {
+func (h *Handle) Home(w http.ResponseWriter, r *http.Request) {
 
 	if r.URL.Path != "/" {
 		http.NotFound(w, r)
@@ -46,60 +48,71 @@ func (c *Controller) Home(w http.ResponseWriter, r *http.Request) {
 
 	//panic("oops! something went wrong") // Deliberate panic for testing
 
-	s, err := c.snippets.Latest()
+	s, err := h.snippets.Latest()
 	if err != nil {
-		c.serverError(w, err)
+		h.serverError(w, err)
 		return
 	}
 
 	// Use the new render helper.
-	c.render(w, r, "home.page.tmpl", &templateData{Snippets: s})
+	h.render(w, r, "home.page.tmpl", &cache.TemplateData{Snippets: s})
 
 }
-func (c *Controller) ShowSnippet(w http.ResponseWriter, r *http.Request) {
+func (h *Handle) ShowSnippet(w http.ResponseWriter, r *http.Request) {
 
 	id, err := strconv.Atoi(r.URL.Query().Get("snippet_id"))
 	if err != nil || id < 1 {
-		c.notFound(w)
+		h.notFound(w)
 		return
 	}
 
 	// Use the SnippetModel object's Get method to retrieve the data for a
 	// specific record based on its ID. If no matching record is found,
 	// return a 404 Not Found response.
-	s, err := c.snippets.Get(id)
+	s, err := h.snippets.Get(id)
 	if err != nil {
 		if errors.Is(err, models.ErrNoRecord) {
-			c.notFound(w)
+			h.notFound(w)
 		} else {
-			c.serverError(w, err)
+			h.serverError(w, err)
 		}
 		return
 	}
 	// Use the new render helper.
-	c.render(w, r, "show.page.tmpl", &templateData{
+	h.render(w, r, "show.page.tmpl", &cache.TemplateData{
 		Snippet: s,
 	})
 
 }
-func (c *Controller) CreateSnippet(w http.ResponseWriter, r *http.Request) {
+
+func (h *Handle) CreateSnippet(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		w.Header().Set("Allow", http.MethodPost)
-		c.clientError(w, http.StatusMethodNotAllowed) // Use the clientError() helper.
-		//http.Error(w, "Method Not Allowed", 405)
+		h.clientError(w, http.StatusMethodNotAllowed) // Use the clientError() helper.
 		return
 	}
 
-	// Create some variables holding dummy data. We'll remove these later on
-	// during the build.
-	title := "O snail"
-	content := "O snail\nClimb Mount Fuji,\nBut slowly, slowly!\n\n– Kobayashi Issa"
-	expires := "7"
+	// First we call r.ParseForm() which adds any data in POST request bodies
+	// to the r.PostForm map. This also works in the same way for PUT and PATCH
+	// requests. If there are any errors, we use our app.ClientError helper to send
+	// a 400 Bad Request response to the user.
+	err := r.ParseForm()
+	if err != nil {
+		h.clientError(w, http.StatusBadRequest)
+		return
+	}
+
+	// Use the r.PostForm.Get() method to retrieve the relevant data fields
+	// from the r.PostForm map.
+	title := r.PostForm.Get("title")
+	content := r.PostForm.Get("content")
+	expires := r.PostForm.Get("expires")
+
 	// Pass the data to the SnippetModel.Insert() method, receiving the
 	// ID of the new record back.
-	id, err := c.snippets.Insert(title, content, expires)
+	id, err := h.snippets.Insert(title, content, expires)
 	if err != nil {
-		c.serverError(w, err)
+		h.serverError(w, err)
 		return
 	}
 	// Redirect the user to the relevant page for the snippet.
@@ -110,16 +123,15 @@ func (c *Controller) CreateSnippet(w http.ResponseWriter, r *http.Request) {
 
 	//w.Write([]byte(fmt.Sprintf("Create a new snippet with id xxx")))
 }
-func (c *Controller) HealthChecker(w http.ResponseWriter, r *http.Request) {
+func (h *Handle) HealthChecker(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte("health check ok"))
 }
 
-func (c *Controller) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+func (h *Handle) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 }
 
-func (c *Controller) CreateSnippetForm(w http.ResponseWriter, r *http.Request) {
-	w.Write([]byte("Create a new snippet..."))
-
+func (h *Handle) CreateSnippetForm(w http.ResponseWriter, r *http.Request) {
+	h.render(w, r, "create.page.tmpl", nil)
 }

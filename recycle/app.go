@@ -1,18 +1,6 @@
 package recycle
 
-import (
-	"database/sql"
-	"errors"
-	"flag"
-	"fmt"
-	"log"
-	"os"
-	"snippetbox/cmd/web/server"
-	"snippetbox/pkg/logger"
-	"snippetbox/storing/store"
-	"time"
-)
-
+/*
 const (
 	EnvInstanceDev int = iota
 	EnvInstanceProd
@@ -145,3 +133,4 @@ func (a *App) Run() {
 	}
 
 }
+*/
