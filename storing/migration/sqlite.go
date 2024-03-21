@@ -5,7 +5,7 @@ import (
 	"snippetbox/pkg/logger"
 )
 
-func NewSqliteMigration(db *sql.DB, lg logger.Logger) {
+func NewSqliteMigration(db *sql.DB, lg *logger.Logger) {
 
 	defer db.Close()
 

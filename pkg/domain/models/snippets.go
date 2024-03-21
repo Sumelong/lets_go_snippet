@@ -18,5 +18,6 @@ type Snippet struct {
 type ISnippet interface {
 	Insert(title, content, expires string) (int, error)
 	Get(id int) (*Snippet, error)
+	Remove(id int) (int, error)
 	Latest() ([]*Snippet, error)
 }

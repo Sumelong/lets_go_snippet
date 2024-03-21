@@ -19,7 +19,7 @@ type Store struct {
 	sql      *sql.DB
 }
 
-func NewStoreFactory(storeInstance int, lg logger.Logger) *sql.DB {
+func NewStoreFactory(storeInstance int, lg *logger.Logger) *sql.DB {
 
 	switch storeInstance {
 	case StorageInstancePostgres:
@@ -33,7 +33,7 @@ func NewStoreFactory(storeInstance int, lg logger.Logger) *sql.DB {
 	}
 }
 
-func RunMigration(storeInstance int, db *sql.DB, lg logger.Logger) {
+func RunMigration(storeInstance int, db *sql.DB, lg *logger.Logger) {
 
 	switch storeInstance {
 	case StorageInstancePostgres:

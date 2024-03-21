@@ -3,6 +3,7 @@ package handlers
 import (
 	"errors"
 	"fmt"
+	"github.com/golangcollege/sessions"
 	"html/template"
 	"net/http"
 	"path/filepath"
@@ -20,10 +21,15 @@ var (
 type Handle struct {
 	logger        logger.Logger
 	snippets      models.ISnippet
+	session       *sessions.Session
 	templateCache map[string]*template.Template
 }
 
-func NewHandle(snippet models.ISnippet, lg logger.Logger) (*Handle, error) {
+func NewHandle(
+	snippet *models.ISnippet,
+	lg *logger.Logger,
+	session *sessions.Session,
+) (*Handle, error) {
 
 	// Initialize a new template cache...
 	dir := filepath.Join(".", "ui", "html") // "./ui/html/"
@@ -33,8 +39,9 @@ func NewHandle(snippet models.ISnippet, lg logger.Logger) (*Handle, error) {
 	}
 
 	return &Handle{
-		snippets:      snippet,
-		logger:        lg,
+		snippets:      *snippet,
+		logger:        *lg,
+		session:       session,
 		templateCache: templateCache,
 	}, nil
 }
@@ -78,11 +85,18 @@ func (h *Handle) ShowSnippet(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
+
 	// Use the new render helper.
 	h.render(w, r, "show.page.tmpl", &cache.TemplateData{
 		Snippet: s,
 	})
 
+}
+func (h *Handle) CreateSnippetForm(w http.ResponseWriter, r *http.Request) {
+	h.render(w, r, "create.page.tmpl", &cache.TemplateData{
+		// Pass a new empty forms.Form object to the template.
+		Form: forms.NewForm(nil),
+	})
 }
 
 func (h *Handle) CreateSnippet(w http.ResponseWriter, r *http.Request) {
@@ -124,11 +138,43 @@ func (h *Handle) CreateSnippet(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Use the Put() method to add a string value ("Your snippet was saved
+	// successfully!") and the corresponding key ("flash") to the session
+	// data. Note that if there's no existing session for the current user
+	// (or their session has expired) then a new, empty, session for them
+	// will automatically be created by the session middleware.
+	h.session.Put(r, "flash", "Snippet successfully created!")
+
 	// Change the redirect to use the new semantic URL style of /snippet/:id
 	http.Redirect(w, r, fmt.Sprintf("/snippet/%d", id), http.StatusSeeOther)
 
 	//w.Write([]byte(fmt.Sprintf("Create a new snippet with id xxx")))
 }
+func (h *Handle) RemoveSnippet(w http.ResponseWriter, r *http.Request) {
+
+	id, err := strconv.Atoi(r.URL.Query().Get("snippet_id"))
+	if err != nil || id < 1 {
+		h.notFound(w)
+		return
+	}
+
+	// Use the SnippetModel object's Get method to retrieve the data for a
+	// specific record based on its ID. If no matching record is found,
+	// return a 404 Not Found response.
+	s, err := h.snippets.Remove(id)
+	if err != nil {
+		h.notFound(w)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	// Use the new render helper.
+	h.render(w, r, "show.page.tmpl", &cache.TemplateData{
+		Snippet: &models.Snippet{ID: s},
+	})
+
+}
+
 func (h *Handle) HealthChecker(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte("health check ok"))
@@ -136,8 +182,4 @@ func (h *Handle) HealthChecker(w http.ResponseWriter, r *http.Request) {
 
 func (h *Handle) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
-}
-
-func (h *Handle) CreateSnippetForm(w http.ResponseWriter, r *http.Request) {
-	h.render(w, r, "create.page.tmpl", nil)
 }

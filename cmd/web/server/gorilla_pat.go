@@ -2,6 +2,7 @@ package server
 
 import (
 	"fmt"
+	"github.com/golangcollege/sessions"
 	"github.com/gorilla/pat"
 	"github.com/justinas/alice"
 	"net/http"
@@ -15,13 +16,18 @@ import (
 type GorillaPat struct {
 	router *pat.Router
 	handle *handlers.Handle
-	logger logger.Logger
+	logger *logger.Logger
 	addr   string
 }
 
-func NewGorillaPat(lg logger.Logger, addr string, snippet models.ISnippet) (*GorillaPat, error) {
+func NewGorillaPat(
+	lg *logger.Logger,
+	addr string,
+	snippet *models.ISnippet,
+	session *sessions.Session,
+) (*GorillaPat, error) {
 
-	h, err := handlers.NewHandle(snippet, lg)
+	h, err := handlers.NewHandle(snippet, lg, session)
 	if err != nil {
 		return nil, err
 	}
@@ -53,6 +59,7 @@ func (s *GorillaPat) routes() http.Handler {
 	s.router.Get("/health", s.healthCheckerHandler)
 	s.router.Get("/", s.homeHandler)
 	s.router.Get("/snippet/{id}", s.showSnippetHandler)
+	s.router.Get("/snippet/remove/{id}", s.removeSnippetHandler)
 	s.router.Get("/snippet/create", s.createSnippetHandler)
 	s.router.Post("/snippet/create", s.createSnippetFormHandler)
 
@@ -73,6 +80,13 @@ func (s *GorillaPat) showSnippetHandler(w http.ResponseWriter, r *http.Request) 
 	q.Add("snippet_id", q.Get(":id"))
 	r.URL.RawQuery = q.Encode()
 	s.handle.ShowSnippet(w, r)
+}
+
+func (s *GorillaPat) removeSnippetHandler(w http.ResponseWriter, r *http.Request) {
+	q := r.URL.Query()
+	q.Add("snippet_id", q.Get(":id"))
+	r.URL.RawQuery = q.Encode()
+	s.handle.RemoveSnippet(w, r)
 }
 
 func (s *GorillaPat) createSnippetHandler(w http.ResponseWriter, r *http.Request) {

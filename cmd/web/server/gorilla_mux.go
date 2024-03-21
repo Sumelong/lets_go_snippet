@@ -2,6 +2,7 @@ package server
 
 import (
 	"fmt"
+	"github.com/golangcollege/sessions"
 	"net/http"
 	"path/filepath"
 	"snippetbox/cmd/web/handlers"
@@ -15,13 +16,18 @@ import (
 type Gorilla struct {
 	router *mux.Router
 	handle *handlers.Handle
-	logger logger.Logger
+	logger *logger.Logger
 	addr   string
 }
 
-func NewGorillaMux(lg logger.Logger, addr string, snippet models.ISnippet) (*Gorilla, error) {
+func NewGorillaMux(
+	lg *logger.Logger,
+	addr string,
+	snippet *models.ISnippet,
+	session *sessions.Session,
+) (*Gorilla, error) {
 
-	h, err := handlers.NewHandle(snippet, lg)
+	h, err := handlers.NewHandle(snippet, lg, session)
 	if err != nil {
 		return nil, err
 	}
@@ -51,6 +57,7 @@ func (s *Gorilla) routes() http.Handler {
 	s.router.HandleFunc("/snippet/create", s.createSnippetHandler)
 	s.router.HandleFunc("/snippet/create", s.createSnippetFormHandler)
 	s.router.HandleFunc("/snippet/{id:[0-9]+}", s.showSnippetHandler)
+	s.router.HandleFunc("/snippet/remove/{id:[0-9]+}", s.removeSnippetHandler)
 
 	// Wrap the existing chain with the logRequest middleware.
 	return s.handle.RecoverPanic(s.handle.LogRequest(s.handle.SecureHeaders(s.router)))
@@ -71,6 +78,14 @@ func (s *Gorilla) showSnippetHandler(w http.ResponseWriter, r *http.Request) {
 	q.Add("snippet_id", vars["id"])
 	r.URL.RawQuery = q.Encode()
 	s.handle.ShowSnippet(w, r)
+}
+
+func (s *Gorilla) removeSnippetHandler(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	q := r.URL.Query()
+	q.Add("snippet_id", vars["id"])
+	r.URL.RawQuery = q.Encode()
+	s.handle.RemoveSnippet(w, r)
 }
 
 func (s *Gorilla) createSnippetHandler(w http.ResponseWriter, r *http.Request) {

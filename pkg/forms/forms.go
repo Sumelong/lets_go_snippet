@@ -78,7 +78,7 @@ func (f *Form) IsString(fields ...string) {
 		val := f.Values.Get(field)
 
 		// Define a regular expression to match any special characters
-		re := regexp.MustCompile("[^a-zA-Z0-9]+")
+		re := regexp.MustCompile("^[a-zA-Z0-9s!?.,:;-]+$")
 		// Check if the string contains any matches for the regular expression
 		match := re.MatchString(val)
 

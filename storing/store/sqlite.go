@@ -2,29 +2,36 @@ package store
 
 import (
 	"database/sql"
-	"fmt"
+	"flag"
 	_ "modernc.org/sqlite"
 	"snippetbox/pkg/logger"
 	"snippetbox/pkg/services"
 )
 
-func NewStoreSqlite(lg logger.Logger) *sql.DB {
+func NewStoreSqlite(lg *logger.Logger) *sql.DB {
 
-	dns, err := services.FindFile("snippetbox.sqlite") // Load variables from .env file
+	var dsn string
+	conn, err := services.FindFile("snippetbox.sqlite") // Load variables from .env file
 	if err != nil {
-		fmt.Println("could not locate snippetbox store:", err)
+		lg.Error("could not locate snippetbox store:", err)
 		return nil
 	}
+	lg.Info("snippetbox store located successfully:")
+
 	err = services.LoadEnv()
 	if err != nil {
-		fmt.Println("Error loading .env file:", err)
+		lg.Error("Error loading .env file:", err)
 		return nil
 	}
+	lg.Info(".env loaded successfully")
+
+	flag.StringVar(&dsn, "pg-dsn", conn, "postgres data store")
+	flag.Parse()
 
 	//fmt.Println(dns)
-	lg.Info("dsn configuration successful")
+	lg.Info("sqlite dsn configuration successful")
 
-	db, err := sql.Open("sqlite", dns)
+	db, err := sql.Open("sqlite", dsn)
 	if err != nil {
 		lg.Fatal("Error connecting to the database:", err)
 		//log.Fatal("Error connecting to the database:", err)

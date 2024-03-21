@@ -14,7 +14,7 @@ type SnippetModel struct {
 	lg logger.ILogger
 }
 
-func NewSnippet(db *sql.DB, lg logger.ILogger) *SnippetModel {
+func NewSnippet(db *sql.DB, lg *logger.Logger) *SnippetModel {
 	return &SnippetModel{
 		DB: db,
 		lg: lg,
@@ -78,6 +78,27 @@ func (m *SnippetModel) Get(id int) (*models.Snippet, error) {
 
 	// If everything went OK then return the Snippet object.
 	return s, nil
+}
+
+// Remove take away will return a specific snippet based on its id.
+func (m *SnippetModel) Remove(id int) (int, error) {
+	// Write the SQL statement we want to execute. Again, I've split it over two
+	// lines for readability.
+
+	stmt := `DELETE  FROM snippets WHERE   id = ?`
+	// Use the QueryRow() method on the connection pool to execute our
+	// SQL statement, passing in the untrusted id variable as the value for the
+	// placeholder parameter. This returns a pointer to a sql.Row object which
+	// holds the result from the database.
+	res, err := m.DB.Exec(stmt, id)
+	row, _ := res.RowsAffected()
+	if err != nil {
+		return 0, models.ErrNoRecord
+
+	}
+
+	// If everything went OK then return the Snippet object.
+	return int(row), nil
 }
 
 // Latest will return the 10 most recently created snippets.

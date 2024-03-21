@@ -36,11 +36,20 @@ func (h *Handle) notFound(w http.ResponseWriter) {
 // struct, adds the current year to the CurrentYear field, and then returns
 // the pointer. Again, we're not using the *http.Request parameter at the
 // moment, but we will do later in the book.
-func (h *Handle) addDefaultData(td *cache.TemplateData, _ *http.Request) *cache.TemplateData {
+func (h *Handle) addDefaultData(td *cache.TemplateData, r *http.Request) *cache.TemplateData {
 	if td == nil {
 		td = &cache.TemplateData{}
 	}
 	td.CurrentYear = time.Now().Year()
+
+	// Use the PopString() method to retrieve the value for the "flash" key.
+	// PopString() also deletes the key and value from the session data, so it
+	// acts like a one-time fetch. If there is no matching key in the session
+	// data this will return the empty string.
+	//
+	// Add the flash message to the template data, if one exists.
+	td.Flash = h.session.PopString(r, "flash")
+
 	return td
 }
 

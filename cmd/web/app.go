@@ -5,14 +5,15 @@ import (
 	"errors"
 	"flag"
 	"fmt"
-	"github.com/joho/godotenv"
 	"os"
+	"snippetbox/pkg/services"
+	"time"
+
+	"github.com/golangcollege/sessions"
 	"snippetbox/cmd/web/server"
 	"snippetbox/pkg/domain"
 	"snippetbox/pkg/domain/models"
 	"snippetbox/pkg/logger"
-	"time"
-
 	"snippetbox/storing/store"
 )
 
@@ -29,9 +30,11 @@ type App struct {
 	name string
 	err  error
 
-	logger  logger.Logger
+	logger  *logger.Logger
 	store   *sql.DB
-	snippet models.ISnippet
+	snippet *models.ISnippet
+	session *sessions.Session
+	secret  *string
 
 	addr      string
 	staticDir string
@@ -47,7 +50,7 @@ type App struct {
 }
 
 func NewApp(envInstance int) App {
-	err := godotenv.Load() // Load variables from .env file
+	err := services.LoadEnv() // Load variables from .env file
 	if err != nil {
 		fmt.Println("Error loading .env file:", err)
 		return App{}
@@ -55,12 +58,14 @@ func NewApp(envInstance int) App {
 
 	addr := flag.String("port", "4000", "HTTP network address")
 	dir := flag.String("static-dir", "./ui/static", "Path to static assets")
+	secret := flag.String("secret", os.Getenv("SECRETE"), "Secret key")
 	flag.Parse()
 
 	return App{
 		addr:        *addr,
 		staticDir:   *dir,
 		envInstance: envInstance,
+		secret:      secret,
 	}
 
 }
@@ -86,7 +91,7 @@ func (a App) Logging(logInstance int) App {
 
 	lg, errs := logger.NewLoggerFactory(a.envInstance, logInstance, errLogFile, infoLogFile)
 
-	a.logger = lg
+	a.logger = &lg
 	a.err = errs
 
 	a.logger.Info("app logger configuration successful\n")
@@ -104,8 +109,12 @@ func (a App) Storing(storeInstance int) App {
 
 func (a App) Model() App {
 
-	model, err := domain.NewSnippetsFactory(a.storeInstance, a.logger, a.store)
-	a.snippet = model
+	model, err := domain.NewSnippetsFactory(
+		a.storeInstance,
+		a.logger,
+		a.store,
+	)
+	a.snippet = &model
 	a.err = err
 	return a
 }
@@ -134,8 +143,21 @@ func (a App) WebServerAddress(addr *string) App {
 
 func (a App) WebServer(serverInstance int) App {
 
+	// Use the sessions.New() function to initialize a new session manager,
+	// passing in the secret key as the parameter. Then we configure it so
+	// sessions always expires after 12 hours.
+	session := sessions.New([]byte(*a.secret))
+	session.Lifetime = 12 * time.Hour
+	a.session = session
+
 	// assign server from factory to app server
-	srv, err := server.NewServerFactory(serverInstance, a.logger, a.addr, a.snippet)
+	srv, err := server.NewServerFactory(
+		serverInstance,
+		a.logger,
+		a.addr,
+		a.snippet,
+		session,
+	)
 
 	a.webServer = srv
 	a.err = err

@@ -7,7 +7,7 @@ import (
 	"snippetbox/pkg/logger"
 )
 
-func NewPostgresMigration(db *sql.DB, lg logger.Logger) {
+func NewPostgresMigration(db *sql.DB, lg *logger.Logger) {
 
 	defer db.Close()
 

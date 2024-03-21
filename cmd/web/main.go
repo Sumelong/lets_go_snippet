@@ -18,3 +18,17 @@ func main() {
 	//app.Run()
 
 }
+
+/*
+func main() {
+	// set up configuration
+	c := NewConfig(EnvInstanceDev)
+	c.Name("Snippet Box").
+		Logger(logger.LogInstanceStdLogger).
+		Store(store.StorageInstanceSqlite).
+		Model().
+		WebServerAddress(nil).
+		WebServer(server.ServeInstancePat).Run()
+	//app.Run()
+
+}*/

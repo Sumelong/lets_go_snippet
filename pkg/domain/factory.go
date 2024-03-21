@@ -17,7 +17,7 @@ const (
 
 var ErrUnsupportedModel = errors.New("unsupported model")
 
-func NewSnippetsFactory(storeInstance int, lg logger.ILogger, db *sql.DB) (models.ISnippet, error) {
+func NewSnippetsFactory(storeInstance int, lg *logger.Logger, db *sql.DB) (models.ISnippet, error) {
 
 	switch storeInstance {
 	case store.StorageInstanceSqlite:

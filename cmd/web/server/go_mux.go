@@ -2,6 +2,7 @@ package server
 
 import (
 	"fmt"
+	"github.com/golangcollege/sessions"
 	"net/http"
 	"path/filepath"
 	"snippetbox/cmd/web/handlers"
@@ -15,13 +16,18 @@ import (
 type GoMux struct {
 	router *http.ServeMux
 	handle *handlers.Handle
-	logger logger.Logger
+	logger *logger.Logger
 	addr   string
 }
 
-func NewGoMux(lg logger.Logger, addr string, snippet models.ISnippet) (*GoMux, error) {
+func NewGoMux(
+	lg *logger.Logger,
+	addr string,
+	snippet *models.ISnippet,
+	session *sessions.Session,
+) (*GoMux, error) {
 
-	c, err := handlers.NewHandle(snippet, lg)
+	c, err := handlers.NewHandle(snippet, lg, session)
 	if err != nil {
 		return nil, err
 	}
@@ -53,6 +59,7 @@ func (s *GoMux) routes() http.Handler {
 	s.router.HandleFunc("/health", s.healthCheckerHandler)
 	s.router.HandleFunc("/", s.homeHandler)
 	s.router.HandleFunc("/snippet/{id}", s.showSnippetHandler)
+	s.router.HandleFunc("/snippet/remove/{id}", s.removeSnippetHandler)
 	s.router.HandleFunc("/snippet/create", s.createSnippetHandler)
 	s.router.HandleFunc("/snippet/create", s.createSnippetFormHandler)
 
@@ -74,6 +81,13 @@ func (s *GoMux) showSnippetHandler(w http.ResponseWriter, r *http.Request) {
 	q.Add("snippet_id", q.Get("id"))
 	r.URL.RawQuery = q.Encode()
 	s.handle.ShowSnippet(w, r)
+}
+
+func (s *GoMux) removeSnippetHandler(w http.ResponseWriter, r *http.Request) {
+	q := r.URL.Query()
+	q.Add("snippet_id", q.Get(":id"))
+	r.URL.RawQuery = q.Encode()
+	s.handle.RemoveSnippet(w, r)
 }
 
 func (s *GoMux) createSnippetHandler(w http.ResponseWriter, r *http.Request) {
