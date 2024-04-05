@@ -13,7 +13,7 @@ func FindFile(file string) (string, error) {
 		return "", err
 	}
 
-	// Navigate upwards in the directory hierarchy until we find the .env file
+	// Navigate upwards in the directory hierarchy until we find the file
 	for {
 		envPath := filepath.Join(wd, file)
 		_, err = os.Stat(envPath)
@@ -32,5 +32,5 @@ func FindFile(file string) (string, error) {
 	}
 
 	// .env file not found
-	return "", fmt.Errorf(".env file not found")
+	return "", fmt.Errorf("%s file not found", file)
 }

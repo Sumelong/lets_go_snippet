@@ -7,7 +7,10 @@ import (
 	"snippetbox/pkg/logger"
 )
 
-func NewPostgresMigration(db *sql.DB, lg *logger.Logger) {
+func NewPostgresMigration(db *sql.DB, log *logger.ILogger) {
+
+	lg := *log
+	lg.Info("running migration on postgres data store ")
 
 	defer db.Close()
 
@@ -17,7 +20,7 @@ func NewPostgresMigration(db *sql.DB, lg *logger.Logger) {
 	output, err := cmd.CombinedOutput()
 	if err != nil {
 		lg.Error("Error creating migration: %v", err)
-		lg.Debug(string(output))
+		lg.Debug(string(output), 2)
 		return
 	}
 	fmt.Println("Database created successfully!")

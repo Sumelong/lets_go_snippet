@@ -6,7 +6,7 @@ GET {{host}}/snippet/create
 
 
 ### GET request
-GET {{host}}/snippet/5
+GET {{host}}/snippet/12
 
 ### GET request
 GET {{host}}/

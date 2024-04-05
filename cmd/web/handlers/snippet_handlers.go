@@ -3,68 +3,13 @@ package handlers
 import (
 	"errors"
 	"fmt"
-	"github.com/golangcollege/sessions"
-	"html/template"
 	"net/http"
-	"path/filepath"
 	"snippetbox/cmd/web/cache"
 	"snippetbox/pkg/domain/models"
 	"snippetbox/pkg/forms"
-	"snippetbox/pkg/logger"
 	"strconv"
 )
 
-var (
-	ErrInternalServerErr = errors.New("internal Server Error")
-)
-
-type Handle struct {
-	logger        logger.Logger
-	snippets      models.ISnippet
-	session       *sessions.Session
-	templateCache map[string]*template.Template
-}
-
-func NewHandle(
-	snippet *models.ISnippet,
-	lg *logger.Logger,
-	session *sessions.Session,
-) (*Handle, error) {
-
-	// Initialize a new template cache...
-	dir := filepath.Join(".", "ui", "html") // "./ui/html/"
-	templateCache, err := cache.NewTemplateCache(dir)
-	if err != nil {
-		return nil, err
-	}
-
-	return &Handle{
-		snippets:      *snippet,
-		logger:        *lg,
-		session:       session,
-		templateCache: templateCache,
-	}, nil
-}
-
-func (h *Handle) Home(w http.ResponseWriter, r *http.Request) {
-
-	if r.URL.Path != "/" {
-		http.NotFound(w, r)
-		return
-	}
-
-	//panic("oops! something went wrong") // Deliberate panic for testing
-
-	s, err := h.snippets.Latest()
-	if err != nil {
-		h.serverError(w, err)
-		return
-	}
-
-	// Use the new render helper.
-	h.render(w, r, "home.page.tmpl", &cache.TemplateData{Snippets: s})
-
-}
 func (h *Handle) ShowSnippet(w http.ResponseWriter, r *http.Request) {
 
 	id, err := strconv.Atoi(r.URL.Query().Get("snippet_id"))
@@ -76,7 +21,7 @@ func (h *Handle) ShowSnippet(w http.ResponseWriter, r *http.Request) {
 	// Use the SnippetModel object's Get method to retrieve the data for a
 	// specific record based on its ID. If no matching record is found,
 	// return a 404 Not Found response.
-	s, err := h.snippets.Get(id)
+	s, err := h.snippet.ReadOne(id)
 	if err != nil {
 		if errors.Is(err, models.ErrNoRecord) {
 			h.notFound(w)
@@ -92,13 +37,13 @@ func (h *Handle) ShowSnippet(w http.ResponseWriter, r *http.Request) {
 	})
 
 }
+
 func (h *Handle) CreateSnippetForm(w http.ResponseWriter, r *http.Request) {
 	h.render(w, r, "create.page.tmpl", &cache.TemplateData{
 		// Pass a new empty forms.Form object to the template.
 		Form: forms.NewForm(nil),
 	})
 }
-
 func (h *Handle) CreateSnippet(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		w.Header().Set("Allow", http.MethodPost)
@@ -119,20 +64,27 @@ func (h *Handle) CreateSnippet(w http.ResponseWriter, r *http.Request) {
 	// Create a new forms.Form struct containing the POSTed data from the
 	// form, then use the validation methods to check the content.
 	form := forms.NewForm(r.PostForm)
-	form.Required("title", "content", "expires")
-	form.IsString("title", "content")
+	form.Required("title", "content", "expiresIn")
+	form.IsString("title")
 	form.MaxLength("title", 100)
-	form.PermittedValues("expires", "365", "7", "1")
+	form.PermittedValues("expiresIn", "365", "7", "1")
 	// If the form isn't valid, redisplay the template passing in the
 	// form.Form object as the data.
 	if !form.Valid() {
 		h.render(w, r, "create.page.tmpl", &cache.TemplateData{Form: form})
 		return
 	}
+	newSnippet := models.Snippet{
+		ID:        0,
+		Title:     form.Values.Get("title"),
+		Content:   form.Values.Get("content"),
+		ExpiresIn: form.Values.Get("expiresIn"),
+	}
+
 	// Because the form data (with type url.Values) has been anonymously embedded
 	// in the form.Form struct, we can use the Get() method to retrieve
 	// the validated value for a particular form field.
-	id, err := h.snippets.Insert(form.Values.Get("title"), form.Values.Get("content"), form.Values.Get("expires"))
+	id, err := h.snippet.Create(newSnippet)
 	if err != nil {
 		h.serverError(w, err)
 		return
@@ -150,6 +102,7 @@ func (h *Handle) CreateSnippet(w http.ResponseWriter, r *http.Request) {
 
 	//w.Write([]byte(fmt.Sprintf("Create a new snippet with id xxx")))
 }
+
 func (h *Handle) RemoveSnippet(w http.ResponseWriter, r *http.Request) {
 
 	id, err := strconv.Atoi(r.URL.Query().Get("snippet_id"))
@@ -161,7 +114,7 @@ func (h *Handle) RemoveSnippet(w http.ResponseWriter, r *http.Request) {
 	// Use the SnippetModel object's Get method to retrieve the data for a
 	// specific record based on its ID. If no matching record is found,
 	// return a 404 Not Found response.
-	s, err := h.snippets.Remove(id)
+	res, err := h.snippet.Delete(uint(id))
 	if err != nil {
 		h.notFound(w)
 		return
@@ -170,14 +123,9 @@ func (h *Handle) RemoveSnippet(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	// Use the new render helper.
 	h.render(w, r, "show.page.tmpl", &cache.TemplateData{
-		Snippet: &models.Snippet{ID: s},
+		Snippet: &models.Snippet{ID: int(res)},
 	})
 
-}
-
-func (h *Handle) HealthChecker(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(http.StatusOK)
-	w.Write([]byte("health check ok"))
 }
 
 func (h *Handle) ServeHTTP(w http.ResponseWriter, r *http.Request) {

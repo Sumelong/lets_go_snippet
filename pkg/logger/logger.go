@@ -13,41 +13,41 @@ import (
 type ILogger interface {
 	Error(format string, args ...any)
 	Info(format string, args ...any)
-	Debug(format string, args ...any)
+	Debug(format string, depth int)
 	Fatal(format string, args ...any)
 }
 
-type Logger struct {
+type StdLogger struct {
 	ErrLog, InfoLog *log.Logger
 }
 
-func NewLogger() Logger {
+func NewStdLogger() *StdLogger {
 
 	//log info
 	info := log.New(os.Stdout, "[INFO]\t", log.Ldate|log.Ltime|log.LUTC)
 	//log error
 	err := log.New(os.Stderr, "[ERROR]\t", log.Ldate|log.Ltime|log.LUTC|log.Llongfile)
 
-	return Logger{
+	return &StdLogger{
 		ErrLog:  err,
 		InfoLog: info,
 	}
 }
 
-func (l Logger) Error(format string, args ...any) {
+func (l StdLogger) Error(format string, args ...any) {
 	l.ErrLog.Printf(format, args...)
 }
 
-func (l Logger) Info(format string, args ...any) {
+func (l StdLogger) Info(format string, args ...any) {
 	l.InfoLog.Printf(format, args...)
 }
 
-func (l Logger) Debug(format string, args ...any) {
+func (l StdLogger) Debug(format string, depth int) {
 	trace := fmt.Sprintf("%s\n%s", format, debug.Stack())
-	l.ErrLog.Output(1, trace)
+	l.ErrLog.Output(depth, trace)
 }
 
-func (l Logger) Fatal(format string, args ...any) {
+func (l StdLogger) Fatal(format string, args ...any) {
 	l.ErrLog.Fatalf(format, args...)
 }
 
@@ -67,41 +67,41 @@ const (
 	EnvInstanceProd
 )
 
-func NewLoggerFactory(envInstance, loggerInstance int, errLogFile, infoLogFile string) (Logger, error) {
+func NewLoggerFactory(envInstance, loggerInstance int, errLogFile, infoLogFile string) (ILogger, error) {
 
 	switch envInstance {
 	case EnvInstanceDev:
 		switch loggerInstance {
 		case LogInstanceSlogLogger:
-			return Logger{}, ErrUnsupportedLogger
+			return nil, ErrUnsupportedLogger
 		case LogInstanceStdLogger:
 			//log info
 			//infoLog := log.New(os.Stdout, "[INFO]\t", log.Ldate|log.Ltime|log.LUTC)
 			//log error
 			//errLog := log.New(os.Stderr, "[ERROR]\t", log.Ldate|log.Ltime|log.LUTC|log.Llongfile)
 
-			return NewLogger(), nil
+			return NewStdLogger(), nil
 		default:
-			return Logger{}, ErrUnsupportedLogger
+			return nil, ErrUnsupportedLogger
 		}
 	case EnvInstanceProd:
 		switch loggerInstance {
 		case LogInstanceSlogLogger:
-			return Logger{}, ErrUnsupportedLogger
+			return nil, ErrUnsupportedLogger
 		case LogInstanceStdLogger:
 
 			// get infoLog file or return nil and error if any
 			errFile, err := fileWrite(errLogFile)
 			//defer errFile.Close()
 			if err != nil {
-				return Logger{}, err
+				return nil, err
 			}
 
 			//get errLog file or return error
 			infoFile, err := fileWrite(infoLogFile)
 			//defer infoFile.Close()
 			if err != nil {
-				return Logger{}, err
+				return nil, err
 			}
 
 			//log info
@@ -113,12 +113,12 @@ func NewLoggerFactory(envInstance, loggerInstance int, errLogFile, infoLogFile s
 			os.Stderr = errFile
 
 			//return newLogger
-			return NewLogger(), nil
+			return NewStdLogger(), nil
 		default:
-			return Logger{}, ErrUnsupportedLogger
+			return StdLogger{}, ErrUnsupportedLogger
 		}
 	default:
-		return Logger{}, ErrUnsupportedEnv
+		return StdLogger{}, ErrUnsupportedEnv
 	}
 
 }

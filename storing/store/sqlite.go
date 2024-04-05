@@ -8,7 +8,9 @@ import (
 	"snippetbox/pkg/services"
 )
 
-func NewStoreSqlite(lg *logger.Logger) *sql.DB {
+func NewStoreSqlite(log *logger.ILogger) *sql.DB {
+	//dereference logger
+	lg := *log
 
 	var dsn string
 	conn, err := services.FindFile("snippetbox.sqlite") // Load variables from .env file

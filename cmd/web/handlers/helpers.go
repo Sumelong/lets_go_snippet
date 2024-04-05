@@ -3,8 +3,8 @@ package handlers
 import (
 	"bytes"
 	"fmt"
+	"github.com/justinas/nosurf"
 	"net/http"
-	"runtime/debug"
 	"snippetbox/cmd/web/cache"
 	"time"
 )
@@ -12,10 +12,22 @@ import (
 // The serverError helper writes an error message and stack trace to the errorLog,
 // then sends a generic 500 Internal Server Error response to the user.
 func (h *Handle) serverError(w http.ResponseWriter, err error) {
-	trace := fmt.Sprintf("%s\n%s", err.Error(), debug.Stack())
-	h.logger.ErrLog.Output(2, trace)
+	h.logger.Debug(err.Error(), 2)
 
 	http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+}
+
+// Return true if the current request is from authenticated user, otherwise return false.
+func (h *Handle) isAuthenticated(r *http.Request) bool {
+	isAuthenticated, ok := r.Context().Value(h.contextKeyIsAuthenticated).(bool)
+	h.logger.Info("isAuth Value :", isAuthenticated)
+	h.logger.Info("okay Value :", ok)
+	if !ok {
+		return false
+	}
+	return isAuthenticated
+	//return true //h.session.Exists(r, "authenticatedUserID")
+
 }
 
 // The clientError helper sends a specific status code and corresponding description
@@ -40,6 +52,10 @@ func (h *Handle) addDefaultData(td *cache.TemplateData, r *http.Request) *cache.
 	if td == nil {
 		td = &cache.TemplateData{}
 	}
+
+	// Add the CSRF token to the templateData struct.
+	td.CSRFToken = nosurf.Token(r)
+
 	td.CurrentYear = time.Now().Year()
 
 	// Use the PopString() method to retrieve the value for the "flash" key.
@@ -49,6 +65,9 @@ func (h *Handle) addDefaultData(td *cache.TemplateData, r *http.Request) *cache.
 	//
 	// Add the flash message to the template data, if one exists.
 	td.Flash = h.session.PopString(r, "flash")
+
+	// Add the authentication status to the template data.
+	td.IsAuthenticated = h.isAuthenticated(r)
 
 	return td
 }

@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"path/filepath"
 	"snippetbox/cmd/web/handlers"
-	"snippetbox/pkg/domain/models"
+	"snippetbox/pkg/domain/ports"
 	"snippetbox/pkg/logger"
 	"time"
 
@@ -16,18 +16,20 @@ import (
 type Gorilla struct {
 	router *mux.Router
 	handle *handlers.Handle
-	logger *logger.Logger
+	logger logger.ILogger
 	addr   string
 }
 
 func NewGorillaMux(
-	lg *logger.Logger,
+	lg *logger.ILogger,
 	addr string,
-	snippet *models.ISnippet,
+	user *ports.IUserRepository,
+	snippet *ports.ISnippetRepository,
 	session *sessions.Session,
+	staticFileDir string,
 ) (*Gorilla, error) {
 
-	h, err := handlers.NewHandle(snippet, lg, session)
+	h, err := handlers.NewHandle(user, snippet, lg, session, staticFileDir)
 	if err != nil {
 		return nil, err
 	}
@@ -35,7 +37,7 @@ func NewGorillaMux(
 	// return server
 	return &Gorilla{
 		router: mux.NewRouter(),
-		logger: lg,
+		logger: *lg,
 		addr:   addr,
 		handle: h,
 	}, nil
@@ -106,9 +108,9 @@ func (s *Gorilla) Begin() error {
 	// the ErrorLog field so that the server now uses the custom errorLog logger in
 	// the event of any problems.
 	srv := &http.Server{
-		Addr:     fmt.Sprintf(":%s", s.addr),
-		ErrorLog: s.logger.ErrLog,
-		Handler:  s.routes(),
+		Addr: fmt.Sprintf(":%s", s.addr),
+		//ErrorLog: s.logger.ErrLog,
+		Handler: s.routes(),
 		// Good practice: enforce timeouts for servers you create!
 		WriteTimeout: 15 * time.Second,
 		ReadTimeout:  15 * time.Second,

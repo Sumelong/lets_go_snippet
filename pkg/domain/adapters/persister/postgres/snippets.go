@@ -13,10 +13,10 @@ type SnippetModel struct {
 	lg logger.ILogger
 }
 
-func NewSnippet(db *sql.DB, lg *logger.Logger) *SnippetModel {
+func NewSnippet(db *sql.DB, lg *logger.ILogger) *SnippetModel {
 	return &SnippetModel{
 		DB: db,
-		lg: lg,
+		lg: *lg,
 	}
 }
 

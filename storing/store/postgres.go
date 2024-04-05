@@ -9,7 +9,10 @@ import (
 	"snippetbox/pkg/services"
 )
 
-func NewStorePostgres(lg *logger.Logger) *sql.DB {
+func NewStorePostgres(log *logger.ILogger) *sql.DB {
+
+	lg := *log
+
 	err := services.LoadEnv() // Load variables from .env file
 	if err != nil {
 		fmt.Println("Error loading .env file:", err)
@@ -44,7 +47,7 @@ func NewStorePostgres(lg *logger.Logger) *sql.DB {
 
 	err = db.Ping()
 	if err != nil {
-		lg.Debug(err.Error())
+		lg.Debug(err.Error(), 2)
 		//lg.Fatal(err.Error())
 	}
 

@@ -13,16 +13,23 @@ import (
 // At the moment it only contains one field, but we'll add more
 // to it as the build progresses.
 type TemplateData struct {
-	CurrentYear int
-	Form        *forms.Form
-	Snippet     *models.Snippet
-	Snippets    []*models.Snippet
-	Flash       string
+	CurrentYear     int
+	Form            *forms.Form
+	Snippet         *models.Snippet
+	Snippets        []*models.Snippet
+	Flash           string
+	IsAuthenticated bool
+	CSRFToken       string
 }
 
 // Create a humanDate function which returns a nicely formatted string
 // representation of a time.Time object.
 func humanDate(t time.Time) string {
+	// Return the empty string if time has the zero value.
+	if t.IsZero() {
+		return ""
+	}
+
 	return t.Format("02 Jan 2006 at 15:04")
 }
 

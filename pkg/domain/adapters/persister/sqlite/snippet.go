@@ -8,35 +8,35 @@ import (
 	"snippetbox/pkg/logger"
 )
 
-// SnippetModel type which wraps a sql.DB connection pool.
-type SnippetModel struct {
+// SnippetRepository type which wraps a sql.DB connection pool.
+type SnippetRepository struct {
 	DB *sql.DB
 	lg logger.ILogger
 }
 
-func NewSnippet(db *sql.DB, lg *logger.Logger) *SnippetModel {
-	return &SnippetModel{
+func NewSnippetRepository(db *sql.DB, lg *logger.ILogger) *SnippetRepository {
+	return &SnippetRepository{
 		DB: db,
-		lg: lg,
+		lg: *lg,
 	}
 }
 
 // Insert a new snippet into the database.
-func (m *SnippetModel) Insert(title, content, expire string) (int, error) {
+func (r *SnippetRepository) Insert(title, content, expire string) (int, error) {
 
 	exp := fmt.Sprintf("+%s days", expire)
 	stmt := `INSERT INTO snippets (title, content, created, expires) 
 			 VALUES(?, ?, CURRENT_TIMESTAMP, DATETIME(CURRENT_TIMESTAMP,?))`
 
-	result, err := m.DB.Exec(stmt, title, content, exp)
+	result, err := r.DB.Exec(stmt, title, content, exp)
 	if err != nil {
-		m.lg.Error(err.Error())
+		r.lg.Error(err.Error())
 		return 0, err
 	}
 
 	id, err := result.LastInsertId()
 	if err != nil {
-		m.lg.Error(err.Error())
+		r.lg.Error(err.Error())
 		return 0, err
 	}
 
@@ -44,7 +44,7 @@ func (m *SnippetModel) Insert(title, content, expire string) (int, error) {
 }
 
 // Get will return a specific snippet based on its id.
-func (m *SnippetModel) Get(id int) (*models.Snippet, error) {
+func (r *SnippetRepository) Get(id int) (*models.Snippet, error) {
 	// Write the SQL statement we want to execute. Again, I've split it over two
 	// lines for readability.
 
@@ -54,7 +54,7 @@ func (m *SnippetModel) Get(id int) (*models.Snippet, error) {
 	// SQL statement, passing in the untrusted id variable as the value for the
 	// placeholder parameter. This returns a pointer to a sql.Row object which
 	// holds the result from the database.
-	row := m.DB.QueryRow(stmt, id)
+	row := r.DB.QueryRow(stmt, id)
 	// Initialize a pointer to a new zeroed Snippet struct.
 	s := &models.Snippet{}
 
@@ -63,7 +63,7 @@ func (m *SnippetModel) Get(id int) (*models.Snippet, error) {
 	// to row.Scan are *pointers* to the place you want to copy the data into,
 	// and the number of arguments must be exactly the same as the number of
 	// columns returned by your statement.
-	err := row.Scan(&s.ID, &s.Title, &s.Content, &s.Created, &s.Expires)
+	err := row.Scan(&s.ID, &s.Title, &s.Content, &s.CreatedOn, &s.ExpiresOn)
 	if err != nil {
 		// If the query returns no rows, then row.Scan() will return a
 		// sql.ErrNoRows error. We use the errors.Is() function check for that
@@ -81,7 +81,7 @@ func (m *SnippetModel) Get(id int) (*models.Snippet, error) {
 }
 
 // Remove take away will return a specific snippet based on its id.
-func (m *SnippetModel) Remove(id int) (int, error) {
+func (r *SnippetRepository) Remove(id int) (int, error) {
 	// Write the SQL statement we want to execute. Again, I've split it over two
 	// lines for readability.
 
@@ -90,7 +90,7 @@ func (m *SnippetModel) Remove(id int) (int, error) {
 	// SQL statement, passing in the untrusted id variable as the value for the
 	// placeholder parameter. This returns a pointer to a sql.Row object which
 	// holds the result from the database.
-	res, err := m.DB.Exec(stmt, id)
+	res, err := r.DB.Exec(stmt, id)
 	row, _ := res.RowsAffected()
 	if err != nil {
 		return 0, models.ErrNoRecord
@@ -102,7 +102,7 @@ func (m *SnippetModel) Remove(id int) (int, error) {
 }
 
 // Latest will return the 10 most recently created snippets.
-func (m *SnippetModel) Latest() ([]*models.Snippet, error) {
+func (r *SnippetRepository) Latest() ([]*models.Snippet, error) {
 
 	//where := time.Now()
 
@@ -116,7 +116,7 @@ func (m *SnippetModel) Latest() ([]*models.Snippet, error) {
 	// Use the Query() method on the connection pool to execute our
 	// SQL statement. This returns a sql.Rows resultset containing the result of
 	// our query.
-	rows, err := m.DB.Query(stmt)
+	rows, err := r.DB.Query(stmt)
 	if err != nil {
 		return nil, err
 	}
@@ -144,7 +144,7 @@ func (m *SnippetModel) Latest() ([]*models.Snippet, error) {
 		// must be pointers to the place you want to copy the data into, and the
 		// number of arguments must be exactly the same as the number of
 		// columns returned by your statement.
-		err = rows.Scan(&s.ID, &s.Title, &s.Content, &s.Created, &s.Expires)
+		err = rows.Scan(&s.ID, &s.Title, &s.Content, &s.CreatedOn, &s.ExpiresOn)
 		if err != nil {
 			return nil, err
 		}
@@ -160,4 +160,147 @@ func (m *SnippetModel) Latest() ([]*models.Snippet, error) {
 	}
 	// If everything went OK then return the Snippets slice.
 	return snippets, nil
+}
+
+func (r *SnippetRepository) Create(s models.Snippet) (uint, error) {
+
+	exp := fmt.Sprintf("+%s days", s.ExpiresIn)
+	stmt := `INSERT INTO snippets (title, content, created, expires) 
+			 VALUES(?, ?, CURRENT_TIMESTAMP, DATETIME(CURRENT_TIMESTAMP,?))`
+
+	result, err := r.DB.Exec(stmt, s.Title, s.Content, exp)
+	if err != nil {
+		r.lg.Error(err.Error())
+		return 0, err
+	}
+
+	id, err := result.LastInsertId()
+	if err != nil {
+		r.lg.Error(err.Error())
+		return 0, err
+	}
+
+	return uint(id), nil
+}
+
+func (r *SnippetRepository) ReadAll() ([]*models.Snippet, error) {
+
+	stmt := `SELECT id, title, content, created, expires FROM snippets
+	WHERE expires > current_timestamp ORDER BY created DESC LIMIT 10`
+
+	rows, err := r.DB.Query(stmt)
+	if err != nil {
+		return nil, err
+	}
+
+	defer rows.Close()
+
+	var snippets []*models.Snippet
+
+	for rows.Next() {
+
+		s := &models.Snippet{}
+		err = rows.Scan(&s.ID, &s.Title, &s.Content, &s.CreatedOn, &s.ExpiresOn)
+		if err != nil {
+			return nil, err
+		}
+
+		snippets = append(snippets, s)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+	return snippets, nil
+}
+
+func (r *SnippetRepository) ReadOne(id int) (*models.Snippet, error) {
+
+	stmt := `SELECT id, title, content, created, expires FROM snippets
+	WHERE id = ?`
+
+	row := r.DB.QueryRow(stmt, id)
+	// Initialize a pointer to a new zeroed Snippet struct.
+	s := &models.Snippet{}
+
+	err := row.Scan(&s.ID, &s.Title, &s.Content, &s.CreatedOn, &s.ExpiresOn)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, models.ErrNoRecord
+		} else {
+			return nil, err
+		}
+	}
+
+	// If everything went OK then return the Snippet object.
+	return s, nil
+}
+
+func (r *SnippetRepository) ReadBy(s *models.Snippet) ([]*models.Snippet, error) {
+
+	stmt := `SELECT id, title, content, created, expires FROM snippets
+	WHERE title = ? OR content = ? AND expires > current_timestamp  ORDER BY created DESC LIMIT 10`
+
+	rows, err := r.DB.Query(stmt, s.Title, s.Content)
+	if err != nil {
+		return nil, err
+	}
+
+	defer rows.Close()
+
+	var snippets []*models.Snippet
+
+	for rows.Next() {
+
+		ss := &models.Snippet{}
+		err = rows.Scan(&ss.ID, &ss.Title, &ss.Content, &ss.CreatedOn, &ss.ExpiresOn)
+		if err != nil {
+			return nil, err
+		}
+
+		snippets = append(snippets, ss)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+	return snippets, nil
+}
+
+func (r *SnippetRepository) Update(s *models.Snippet) (uint, error) {
+
+	stmt := `UPDATE snippets SET title =?,content =?,expires =? WHERE id = ?`
+
+	result, err := r.DB.Exec(stmt, s.Title, s.Content, s.ExpiresOn, s.ID)
+	if err != nil {
+		r.lg.Error(err.Error())
+		return 0, err
+	}
+
+	res, err := result.RowsAffected()
+	if err != nil {
+		r.lg.Error(err.Error())
+		return 0, err
+	}
+
+	return uint(res), nil
+}
+
+func (r *SnippetRepository) Delete(id uint) (uint, error) {
+
+	stmt := `DELETE FROM snippets WHERE id = ?`
+
+	result, err := r.DB.Exec(stmt, id)
+	if err != nil {
+		r.lg.Error(err.Error())
+		return 0, err
+	}
+
+	res, err := result.RowsAffected()
+	if err != nil {
+		r.lg.Error(err.Error())
+		return 0, err
+	}
+
+	return uint(res), nil
 }

@@ -6,12 +6,12 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"snippetbox/pkg/domain/models"
 	"snippetbox/pkg/services"
 	"time"
 
 	"github.com/golangcollege/sessions"
 	"snippetbox/cmd/web/server"
-	"snippetbox/pkg/domain/models"
 	"snippetbox/pkg/logger"
 )
 
@@ -28,7 +28,7 @@ type App struct {
 	Name string
 	Err  error
 
-	Logger  logger.Logger
+	Logger  logger.StdLogger
 	Store   *sql.DB
 	Snippet *models.ISnippet
 	Session *sessions.Session

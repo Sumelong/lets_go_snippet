@@ -5,14 +5,15 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"net/http"
 	"os"
+	"snippetbox/pkg/domain/adapters/persister"
+	"snippetbox/pkg/domain/ports"
 	"snippetbox/pkg/services"
 	"time"
 
 	"github.com/golangcollege/sessions"
 	"snippetbox/cmd/web/server"
-	"snippetbox/pkg/domain"
-	"snippetbox/pkg/domain/models"
 	"snippetbox/pkg/logger"
 	"snippetbox/storing/store"
 )
@@ -26,15 +27,16 @@ var (
 	ErrUnsupportedEnv = errors.New("unsupported environment")
 )
 
-type App struct {
+type Application struct {
 	name string
 	err  error
 
-	logger  *logger.Logger
-	store   *sql.DB
-	snippet *models.ISnippet
-	session *sessions.Session
-	secret  *string
+	Logger            logger.ILogger
+	storeConn         *sql.DB
+	UserRepository    *ports.IUserRepository
+	SnippetRepository *ports.ISnippetRepository
+	Session           *sessions.Session
+	secret            *string
 
 	addr      string
 	staticDir string
@@ -49,11 +51,11 @@ type App struct {
 	storeInstance   int
 }
 
-func NewApp(envInstance int) App {
+func NewApplication(envInstance int) Application {
 	err := services.LoadEnv() // Load variables from .env file
 	if err != nil {
 		fmt.Println("Error loading .env file:", err)
-		return App{}
+		return Application{}
 	}
 
 	addr := flag.String("port", "4000", "HTTP network address")
@@ -61,7 +63,7 @@ func NewApp(envInstance int) App {
 	secret := flag.String("secret", os.Getenv("SECRETE"), "Secret key")
 	flag.Parse()
 
-	return App{
+	return Application{
 		addr:        *addr,
 		staticDir:   *dir,
 		envInstance: envInstance,
@@ -70,7 +72,7 @@ func NewApp(envInstance int) App {
 
 }
 
-func (a App) Name(name string) App {
+func (a Application) Name(name string) Application {
 
 	switch name {
 	case "":
@@ -81,7 +83,7 @@ func (a App) Name(name string) App {
 	return a
 }
 
-func (a App) Logging(logInstance int) App {
+func (a Application) Logging(logInstance int) Application {
 
 	//set names of production logging files
 	// app will create a director in root call logs
@@ -89,96 +91,105 @@ func (a App) Logging(logInstance int) App {
 	infoLogFile := "logInfo.log"
 	errLogFile := "logErr.log"
 
-	lg, errs := logger.NewLoggerFactory(a.envInstance, logInstance, errLogFile, infoLogFile)
+	a.Logger, a.err = logger.NewLoggerFactory(a.envInstance, logInstance, errLogFile, infoLogFile)
+	/*
+		a.logger = lg
+		a.err = errs*/
 
-	a.logger = &lg
-	a.err = errs
-
-	a.logger.Info("app logger configuration successful\n")
+	a.Logger.Info("app logger configuration successful\n")
 
 	return a
 }
 
-func (a App) Storing(storeInstance int) App {
+func (a Application) Storing(storeInstance int) Application {
 
 	a.storeInstance = storeInstance
-	s := store.NewStoreFactory(storeInstance, a.logger)
-	a.store = s
+	s := store.NewStoreFactory(storeInstance, &a.Logger)
+	a.storeConn = s
 	return a
 }
 
-func (a App) Model() App {
+func (a Application) Repository() Application {
 
-	model, err := domain.NewSnippetsFactory(
+	ur, sr, err := persister.NewRepositoryFactory(
 		a.storeInstance,
-		a.logger,
-		a.store,
+		&a.Logger,
+		a.storeConn,
 	)
-	a.snippet = &model
+	a.UserRepository = ur
+	a.SnippetRepository = sr
+
 	a.err = err
 	return a
 }
 
-func (a App) Migrate() {
+func (a Application) Migrate() {
 
-	a.logger.Info("beginning migration")
-	store.RunMigration(a.storeInstance, a.store, a.logger)
-	a.logger.Info("migration completed")
+	a.Logger.Info("beginning migration")
+	store.RunMigration(a.storeInstance, a.storeConn, &a.Logger)
+	a.Logger.Info("migration completed")
 }
 
-func (a App) WebServerAddress(addr *string) App {
+func (a Application) WebServerAddress(addr *string) Application {
 
 	//check if null and return appConfig to use default value
 	if addr != nil {
-		a.logger.Info(fmt.Sprintf("set port-%s", *addr))
+		a.Logger.Info(fmt.Sprintf("set port-%s", *addr))
 		//if not null use provided value
 		a.addr = *addr
-		a.logger.Info(fmt.Sprintf("set port-%s", *addr))
+		a.Logger.Info(fmt.Sprintf("set port-%s", *addr))
 		return a
 	}
-
 	return a
 
 }
 
-func (a App) WebServer(serverInstance int) App {
+func (a Application) WebServer(serverInstance int) Application {
 
 	// Use the sessions.New() function to initialize a new session manager,
 	// passing in the secret key as the parameter. Then we configure it so
 	// sessions always expires after 12 hours.
 	session := sessions.New([]byte(*a.secret))
 	session.Lifetime = 12 * time.Hour
-	a.session = session
+	session.SameSite = http.SameSiteStrictMode
+	a.Session = session
+
+	staticFileDir, err := services.FindFile("ui/html")
+	if err != nil {
+		a.Logger.Error("static files not found %s", err)
+	}
 
 	// assign server from factory to app server
 	srv, err := server.NewServerFactory(
 		serverInstance,
-		a.logger,
+		&a.Logger,
 		a.addr,
-		a.snippet,
-		session,
+		a.UserRepository,
+		a.SnippetRepository,
+		a.Session,
+		staticFileDir,
 	)
 
 	a.webServer = srv
 	a.err = err
 
-	a.logger.Info("webserver %d configured", serverInstance)
+	a.Logger.Info("webserver %d configured", serverInstance)
 
 	return a
 }
 
-func (a App) Run() {
+func (a Application) Run() {
 
 	if a.err != nil {
-		a.logger.Fatal(a.err.Error(), a.err)
+		a.Logger.Fatal(a.err.Error(), a.err)
 	}
 
-	a.logger.Info("app configuration successful")
-	a.logger.Info("starting app :%s", a.name)
+	a.Logger.Info("app configuration successful")
+	a.Logger.Info("starting app :%s", a.name)
 
 	err := a.webServer.Begin()
 	if err != nil {
-		a.logger.Fatal(err.Error(), err)
+		a.Logger.Fatal(err.Error(), err)
 	}
 
 }

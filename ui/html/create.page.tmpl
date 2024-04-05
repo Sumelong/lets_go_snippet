@@ -2,6 +2,8 @@
 {{define "title"}}Create a New Snippet{{end}}
 {{define "main"}}
     <form action='/snippet/create' method='POST'>
+        <!-- Include the CSRF token -->
+        <input type='hidden' name='csrf_token' value='{{.CSRFToken}}'>
         {{with .Form}}
             <div>
                 <label>Title:</label>
@@ -19,13 +21,13 @@
             </div>
             <div>
                 <label>Delete in:</label>
-                {{with .Errors.Get "expires"}}
+                {{with .Errors.Get "expiresIn"}}
                     <label class='error'>{{.}}</label>
                 {{end}}
-                {{$exp := or (.Values.Get "expires") "365"}}
-                <input type='radio' name='expires' value='365' {{if (eq $exp "365")}}checked{{end}}> One Year
-                <input type='radio' name='expires' value='7' {{if (eq $exp "7")}}checked{{end}}> One Week
-                <input type='radio' name='expires' value='1' {{if (eq $exp "1")}}checked{{end}}> One Day
+                {{$exp := or (.Values.Get "expiresIn") "365"}}
+                <input type='radio' name='expiresIn' value='365' {{if (eq $exp "365")}}checked{{end}}> One Year
+                <input type='radio' name='expiresIn' value='7' {{if (eq $exp "7")}}checked{{end}}> One Week
+                <input type='radio' name='expiresIn' value='1' {{if (eq $exp "1")}}checked{{end}}> One Day
             </div>
             <div>
                 <input type='submit' value='Publish snippet'>

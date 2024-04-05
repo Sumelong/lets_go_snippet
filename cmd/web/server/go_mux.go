@@ -6,28 +6,30 @@ import (
 	"net/http"
 	"path/filepath"
 	"snippetbox/cmd/web/handlers"
+	"snippetbox/pkg/domain/ports"
 	"time"
 
 	"github.com/justinas/alice"
-	"snippetbox/pkg/domain/models"
 	"snippetbox/pkg/logger"
 )
 
 type GoMux struct {
 	router *http.ServeMux
 	handle *handlers.Handle
-	logger *logger.Logger
+	logger logger.ILogger
 	addr   string
 }
 
 func NewGoMux(
-	lg *logger.Logger,
+	lg *logger.ILogger,
 	addr string,
-	snippet *models.ISnippet,
+	user *ports.IUserRepository,
+	snippet *ports.ISnippetRepository,
 	session *sessions.Session,
+	staticFileDir string,
 ) (*GoMux, error) {
 
-	c, err := handlers.NewHandle(snippet, lg, session)
+	c, err := handlers.NewHandle(user, snippet, lg, session, staticFileDir)
 	if err != nil {
 		return nil, err
 	}
@@ -35,7 +37,7 @@ func NewGoMux(
 	// return server
 	return &GoMux{
 		router: http.NewServeMux(),
-		logger: lg,
+		logger: *lg,
 		addr:   addr,
 		handle: c,
 	}, nil
@@ -108,9 +110,9 @@ func (s *GoMux) Begin() error {
 	// the ErrorLog field so that the server now uses the custom errorLog logger in
 	// the event of any problems.
 	srv := &http.Server{
-		Addr:     fmt.Sprintf(":%s", s.addr),
-		ErrorLog: s.logger.ErrLog,
-		Handler:  s.routes(),
+		Addr: fmt.Sprintf(":%s", s.addr),
+		//ErrorLog: s.logger.ErrLog,
+		Handler: s.routes(),
 		// Good practice: enforce timeouts for servers you create!
 		WriteTimeout: 15 * time.Second,
 		ReadTimeout:  15 * time.Second,

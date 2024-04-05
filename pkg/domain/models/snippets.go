@@ -1,23 +1,15 @@
 package models
 
-import (
-	"errors"
-	"time"
-)
+import "time"
 
-var ErrNoRecord = errors.New("domain: no matching record found")
+type Snippetx struct {
+	BaseModel
 
-type Snippet struct {
-	ID      int
 	Title   string
 	Content string
-	Created time.Time
 	Expires time.Time
 }
 
-type ISnippet interface {
-	Insert(title, content, expires string) (int, error)
-	Get(id int) (*Snippet, error)
-	Remove(id int) (int, error)
-	Latest() ([]*Snippet, error)
+func (u Snippet) GetID() uint {
+	return uint(u.ID)
 }

@@ -3,7 +3,7 @@ package server
 import (
 	"errors"
 	"github.com/golangcollege/sessions"
-	"snippetbox/pkg/domain/models"
+	"snippetbox/pkg/domain/ports"
 	"snippetbox/pkg/logger"
 )
 
@@ -22,21 +22,23 @@ var ErrUnsupportedServer = errors.New("unsupported server")
 
 func NewServerFactory(
 	serverInstance int,
-	lg *logger.Logger,
+	lg *logger.ILogger,
 	addr string,
-	snippet *models.ISnippet,
+	user *ports.IUserRepository,
+	snippet *ports.ISnippetRepository,
 	session *sessions.Session,
+	staticFileDir string,
 ) (IServer, error) {
 
 	switch serverInstance {
 	case ServeInstancePat:
-		return NewPat(lg, addr, snippet, session)
+		return NewPat(lg, addr, user, snippet, session, staticFileDir)
 	case ServeInstanceGoMux:
-		return NewGoMux(lg, addr, snippet, session)
+		return NewGoMux(lg, addr, user, snippet, session, staticFileDir)
 	case ServeInstanceGorillaMux:
-		return NewGorillaMux(lg, addr, snippet, session)
+		return NewGorillaMux(lg, addr, user, snippet, session, staticFileDir)
 	case ServeInstanceGorillaPat:
-		return NewGorillaPat(lg, addr, snippet, session)
+		return NewGorillaPat(lg, addr, user, snippet, session, staticFileDir)
 	default:
 		return nil, ErrUnsupportedServer
 	}
